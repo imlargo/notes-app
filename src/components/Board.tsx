@@ -82,7 +82,15 @@ export function Board() {
             </div>)}
 
             <div className="flex items-center justify-between fixed bottom-6 inset-x-0 pointer-events-none px-4">
-                <div></div>
+                <a
+                    href="https://github.com/imlargo"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pointer-events-auto flex items-center gap-x-2 px-3 py-2 rounded-full bg-white border text-sm font-medium"
+                >
+                    <span className="text-neutral-400">by</span>
+                    <span>imlargo.dev</span>
+                </a>
 
                 <Toolbar ref={addButtonRef} onAddNote={addNote} />
 
