@@ -4,14 +4,21 @@ import type { Note } from "../domain/note";
 import { NoteService } from "../services/note";
 import { MockNoteRepository } from "../services/note-repository";
 import { StickyNote } from "./StickyNote";
-import { rectFromPoints, type Point, type Rect } from "../domain/geometry";
+import { rectFromPoints, resize, type Point, type Rect } from "../domain/geometry";
+
+
+type Gesture =
+    | { kind: "create", origin: Point }
+    | { kind: "move", id: number, grab: Point }
+    | { kind: "resize", id: number, start: Rect, from: Point }
 
 export function Board() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [draft, setDraft] = useState<Rect | null>(null)
 
-    const start = useRef<Point | null>(null)
     const boardOrigin = useRef<Point>({ x: 0, y: 0 })
+    const boardRef = useRef<HTMLDivElement>(null)
+    const gesture = useRef<Gesture | null>(null)
 
     const noteService = new NoteService(new MockNoteRepository());
 
@@ -31,32 +38,74 @@ export function Board() {
 
         const point = toLocal(e)
 
-        start.current = point
+        const target = e.target as HTMLElement
+        const isResize = target.closest("[data-resize-handle]") !== null
+        const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
+        const note = noteEl ? notes.find((n) => n.id === parseInt(noteEl.dataset.noteId || "0")) : undefined
+
+        if (note && isResize) {
+            gesture.current = {
+                kind: "resize",
+                id: note.id,
+                start: { x: note.x, y: note.y, w: note.w, h: note.h },
+                from: point,
+            }
+        } else if (note) {
+            gesture.current = {
+                kind: "move",
+                id: note.id,
+                grab: { x: point.x - note.x, y: point.y - note.y }
+            }
+        } else {
+            gesture.current = { kind: "create", origin: point }
+        }
+
         e.currentTarget.setPointerCapture(e.pointerId)
     }
 
     const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-        if (!start.current) return;
-        setDraft(rectFromPoints(start.current, toLocal(e)))
+        const g = gesture.current
+        if (!g) return
+        const point = toLocal(e)
+
+        if (g.kind === "create") {
+            setDraft(rectFromPoints(g.origin, point))
+        } else if (g.kind === "move") {
+            updateNote(g.id, { x: point.x - g.grab.x, y: point.y - g.grab.y })
+        } else if (g.kind === "resize") {
+            const d: Point = { x: point.x - g.from.x, y: point.y - g.from.y }
+            const rect = resize(g.start, d)
+            updateNote(g.id, { ...rect })
+        }
     }
 
     const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-        if (!start.current) return;
-        const rect = rectFromPoints(start.current, toLocal(e))
-        if (rect.w > 8 && rect.h > 8) {
-            createNote(rect)
+        const g = gesture.current
+        if (!g) return
+        const point = toLocal(e)
+
+        if (g.kind === "create") {
+            const rect = rectFromPoints(g.origin, point)
+            if (rect.w > 8 && rect.h > 8) {
+                createNote(rect)
+            }
+        } else {
+            const note = notes.find(n => n.id === g.id)
+            if (note) updateNote(note.id, note)
         }
 
-        start.current = null
+        gesture.current = null
         setDraft(null)
     }
 
-    const boardRef = useRef<HTMLDivElement>(null)
+    async function createNote(rect: Rect) {
+        const created = await noteService.createNote({ ...rect })
+        setNotes((prev) => [...prev, created])
+    }
 
-    function createNote(rect: Rect) {
-        noteService.createNote({
-            ...rect
-        })
+    async function updateNote(id: number, note: Partial<Note>) {
+        const updated = await noteService.updateNote(id, note)
+        setNotes((prev) => prev.map((n) => n.id === id ? updated : n))
     }
 
     return (
