@@ -23,7 +23,7 @@ export class MockNoteRepository {
     }
 
     async create(note: Partial<Note>) {
-        await this._simulateDelay();
+        //await this._simulateDelay();
         const id: number = generateNewID()
 
         const newNote = note as Note
