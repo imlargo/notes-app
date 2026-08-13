@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useReducer, useRef, useState } from "react";
 import { Toolbar } from "./Toolbar";
 import { randomColor, type Note } from "../domain/note";
 import { NoteService } from "../services/note";
@@ -6,6 +6,7 @@ import { MockNoteRepository } from "../services/note-repository";
 import { StickyNote } from "./StickyNote";
 import { contains, rectFromPoints, resize, type Point, type Rect } from "../domain/geometry";
 import { Trash } from "lucide-react";
+import { notesReducer } from "../state/notesReducer";
 
 
 type Gesture =
@@ -14,7 +15,7 @@ type Gesture =
     | { kind: "resize", id: number, start: Rect, from: Point }
 
 export function Board() {
-    const [notes, setNotes] = useState<Note[]>([]);
+    const [notes, dispatch] = useReducer(notesReducer, [])
     const [draft, setDraft] = useState<Rect | null>(null)
 
 
@@ -31,7 +32,7 @@ export function Board() {
     const noteService = new NoteService(new MockNoteRepository());
 
     useEffect(() => {
-        noteService.getNotes().then((data) => setNotes(data))
+        noteService.getNotes().then((data) => dispatch({ type: "load", notes: data }))
     }, [])
 
 
@@ -52,14 +53,9 @@ export function Board() {
     }
 
     const bringToFront = (id: number) => {
-        setNotes((prev) => {
-            const note = prev.find((n) => n.id === id)
-            if (!note) return prev
-
-            // last one
-            if (prev[prev.length - 1]?.id === id) return prev
-
-            return [...prev.filter(n => n.id !== id), note]
+        dispatch({
+            type: "bringToFront",
+            id: id,
         })
     }
 
@@ -165,7 +161,10 @@ export function Board() {
 
     async function createNote(rect: Rect) {
         const created = await noteService.createNote({ ...rect, color: randomColor() })
-        setNotes((prev) => [...prev, created])
+        dispatch({
+            type: "add",
+            note: created
+        })
     }
 
     async function updateNote(id: number, note: Partial<Note>) {
@@ -175,12 +174,20 @@ export function Board() {
     }
 
     function patchNote(id: number, changes: Partial<Note>) {
-        setNotes((prev) => prev.map((n) => n.id === id ? { ...n, ...changes } : n))
+        dispatch({
+            type: "patch",
+            id,
+            changes
+        })
     }
 
     async function deleteNote(id: number) {
         await noteService.deleteNote(id)
-        setNotes((prev) => prev.filter(n => n.id !== id))
+        dispatch({
+            type: "remove",
+            id
+        })
+
         setEditingId((curr) => curr === id ? null : curr)
     }
 
