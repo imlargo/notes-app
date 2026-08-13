@@ -1,0 +1,11 @@
+:root {
+  --canvas: #ffffff;
+  --canvas-dot: rgba(121, 120, 120, 0.171);
+}
+
+.canvas-grid {
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--canvas-dot) 1.4px, transparent 1.4px);
+  background-size: 26px 26px;
+  background-position: -13px -13px;
+}
