@@ -1,6 +1,6 @@
 import { memo, type CSSProperties } from "react";
 import type { Note, NoteColor, } from "../domain/note"
-import { Grip, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 
 interface StickyNoteProps {
     note: Note
