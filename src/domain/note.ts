@@ -1,5 +1,7 @@
+import type { Rect } from "./geometry"
+
 
 export type Note = {
     id: number;
-    content: string;
-}
+    text: string;
+} & Rect
