@@ -17,7 +17,6 @@ export function useBoard() {
     const [editingId, setEditingId] = useState<number | null>(null)
     const [overTrash, setOverTrash] = useState<boolean>(false)
 
-    const boardRef = useRef<HTMLDivElement>(null)
     const trashRef = useRef<HTMLDivElement>(null)
 
     const boardOrigin = useRef<Point>({ x: 0, y: 0 })
@@ -194,7 +193,6 @@ export function useBoard() {
 
     return {
         notes,
-        boardRef,
         onPointerDown,
         onPointerMove,
         onPointerUp,

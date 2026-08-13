@@ -7,7 +7,6 @@ import { useBoard } from "../hooks/useBoard";
 export function Board() {
     const {
         notes,
-        boardRef,
         onPointerDown,
         onPointerMove,
         onPointerUp,
@@ -22,7 +21,7 @@ export function Board() {
     } = useBoard();
 
     return (
-        <div className="board canvas-grid w-full h-full relative select-none  " ref={boardRef}
+        <div className="board canvas-grid w-full h-full relative select-none"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
