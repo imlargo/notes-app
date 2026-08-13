@@ -53,7 +53,7 @@ export function useBoard() {
         noteService.getNotes().then((data) => dispatch({ type: "load", notes: data }))
     }, [noteService])
 
-    const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
 
         // On clicking input 
@@ -89,9 +89,9 @@ export function useBoard() {
         }
 
         e.currentTarget.setPointerCapture(e.pointerId)
-    }
+    }, [notes])
 
-    const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
         if (!g) return
         const point = toLocal(e)
@@ -107,9 +107,9 @@ export function useBoard() {
             const rect = resize(g.start, d)
             patchNote(g.id, { ...rect })
         }
-    }
+    }, [notes])
 
-    const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
         if (!g) return
         const point = toLocal(e)
@@ -134,7 +134,7 @@ export function useBoard() {
 
         gesture.current = null
         setDraft(null)
-    }
+    }, [notes])
 
     const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
