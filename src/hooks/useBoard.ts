@@ -185,7 +185,8 @@ export function useBoard() {
     const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
 
-        if (target.closest("textarea") || target.closest("button")) return
+        // anything interactive keeps its own behaviour instead of starting a drag
+        if (target.closest("textarea, button, a, select")) return
 
         const r = e.currentTarget.getBoundingClientRect();
         boardOrigin.current = { x: r.left, y: r.top }

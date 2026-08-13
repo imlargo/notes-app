@@ -1,6 +1,8 @@
 import type { Rect } from "./geometry"
 
-export const NOTE_COLORS = ["indigo", "amber", "rose", "emerald", "sky", "fuchsia", "lime"]
+// as const is what keeps NoteColor a union, without it it widens to string and
+// COLOR_CLASSES below stops being checked
+export const NOTE_COLORS = ["indigo", "amber", "rose", "emerald", "sky", "fuchsia", "lime"] as const
 export type NoteColor = (typeof NOTE_COLORS)[number]
 
 export const COLOR_CLASSES: Record<NoteColor, string> = {

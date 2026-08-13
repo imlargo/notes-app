@@ -54,6 +54,8 @@ export class LocalStorageRepository implements NoteRepository {
     }
 
     async update(noteId: number, data: Partial<Note>) {
+        await sleep(500);
+
         const notes = loadNotes();
 
         const index = notes.findIndex((note) => note.id === noteId)

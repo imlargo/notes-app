@@ -89,6 +89,8 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
                 onBlur={onStopEditing}
 
                 readOnly={!editing}
+                // one tab stop per note, you get into the text with enter instead
+                tabIndex={editing ? 0 : -1}
                 placeholder="Type something..."
                 onKeyDown={(e) => {
                     if (e.key === "Escape") {
@@ -101,7 +103,7 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         </div>
 
         {/* just a hit target, useBoard reads this attribute on pointerdown */}
-        <div data-resize-handle aria-hidden="true" className="absolute -bottom-1.5 -right-1.5 size-4 bg-white border border-purple-500">
+        <div data-resize-handle aria-hidden="true" className="absolute -bottom-1.5 -right-1.5 size-4 bg-white border border-purple-500 cursor-nwse-resize">
         </div>
     </div>
 })

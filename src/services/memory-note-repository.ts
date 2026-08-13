@@ -47,9 +47,4 @@ export class MockNoteRepository implements NoteRepository {
         _mockNotes[index] = updated
         return updated
     }
-
-
-    async _simulateDelay() {
-        return new Promise((resolve) => setTimeout(resolve, 0))
-    }
 }
