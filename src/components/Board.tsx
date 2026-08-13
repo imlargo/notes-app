@@ -16,6 +16,8 @@ export function Board() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [draft, setDraft] = useState<Rect | null>(null)
 
+    const [editingId, setEditingId] = useState<number | null>(null)
+
     const boardOrigin = useRef<Point>({ x: 0, y: 0 })
     const boardRef = useRef<HTMLDivElement>(null)
     const gesture = useRef<Gesture | null>(null)
@@ -33,12 +35,15 @@ export function Board() {
     })
 
     const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        const target = e.target as HTMLElement
+
+        // On clicking input 
+        if (target.closest("textarea")) return
+
         const r = e.currentTarget.getBoundingClientRect();
         boardOrigin.current = { x: r.left, y: r.top }
-
         const point = toLocal(e)
 
-        const target = e.target as HTMLElement
         const isResize = target.closest("[data-resize-handle]") !== null
         const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
         const note = noteEl ? notes.find((n) => n.id === parseInt(noteEl.dataset.noteId || "0")) : undefined
@@ -98,6 +103,23 @@ export function Board() {
         setDraft(null)
     }
 
+    const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        const target = e.target as HTMLElement
+        const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
+        if (noteEl) setEditingId(parseInt(noteEl.dataset.noteId || "0"))
+    }
+
+    function stopEditing() {
+        if (editingId === null) return
+
+        const note = notes.find((n) => n.id === editingId)
+        if (note) {
+            updateNote(note.id, note)
+        }
+
+        setEditingId(null)
+    }
+
     async function createNote(rect: Rect) {
         const created = await noteService.createNote({ ...rect })
         setNotes((prev) => [...prev, created])
@@ -106,11 +128,11 @@ export function Board() {
     async function updateNote(id: number, note: Partial<Note>) {
         const updated = await noteService.updateNote(id, note)
         patchNote(id, updated)
-        
+
     }
 
     function patchNote(id: number, changes: Partial<Note>) {
-        setNotes((prev) => prev.map((n) => n.id === id ? {...n, ...changes} : n))
+        setNotes((prev) => prev.map((n) => n.id === id ? { ...n, ...changes } : n))
     }
 
     return (
@@ -118,10 +140,16 @@ export function Board() {
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
+            onDoubleClick={onDoubleClick}
         >
 
             {notes.map((note) => (
-                <StickyNote key={note.id} note={note} ></StickyNote>
+                <StickyNote
+                    editing={editingId === note.id}
+                    onChange={patchNote}
+                    onStopEditing={stopEditing}
+
+                    key={note.id} note={note} ></StickyNote>
             ))}
 
 
