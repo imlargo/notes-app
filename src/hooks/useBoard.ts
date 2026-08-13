@@ -167,15 +167,15 @@ export function useBoard() {
 
     }
 
-    function patchNote(id: number, changes: Partial<Note>) {
+    const patchNote = useCallback((id: number, changes: Partial<Note>) => {
         dispatch({
             type: "patch",
             id,
             changes
         })
-    }
+    }, [])
 
-    async function deleteNote(id: number) {
+    const deleteNote = useCallback(async (id: number) => {
         await noteService.current.deleteNote(id)
         dispatch({
             type: "remove",
@@ -183,7 +183,7 @@ export function useBoard() {
         })
 
         setEditingId((curr) => curr === id ? null : curr)
-    }
+    }, [notes, noteService])
 
 
     useEffect(() => {
