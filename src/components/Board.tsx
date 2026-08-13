@@ -19,10 +19,19 @@ export function Board() {
         trashRef,
         draggingId,
         addNote,
+        moveNoteBy,
+        resizeNoteBy,
+        deleteNote,
+        startEditing,
         announcement,
     } = useBoard();
 
     const addButtonRef = useRef<HTMLButtonElement>(null)
+
+    const handleDelete = (id: number) => {
+        deleteNote(id)
+        addButtonRef.current?.focus()
+    }
 
     return (
         <div className="board canvas-grid w-full h-full relative select-none"
@@ -31,7 +40,6 @@ export function Board() {
             onPointerUp={onPointerUp}
             onDoubleClick={onDoubleClick}
         >
-
             <p id="board-instructions" className="sr-only">
                 Arrow keys move the focused note, hold shift to move further, hold alt to resize instead, enter opens it for editing, delete removes it.
             </p>
@@ -44,6 +52,10 @@ export function Board() {
                     editing={editingId === note.id}
                     onChange={patchNote}
                     onStopEditing={stopEditing}
+                    onMove={moveNoteBy}
+                    onResize={resizeNoteBy}
+                    onDelete={handleDelete}
+                    onStartEditing={startEditing}
 
                     key={note.id} note={note} ></StickyNote>
             ))}

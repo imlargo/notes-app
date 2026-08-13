@@ -57,11 +57,15 @@ export function useBoard() {
 
 
 
+    const startEditing = useCallback((id: number) => {
+        setEditingId(id)
+    }, [])
+
     const onDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
         const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
-        if (noteEl) setEditingId(parseInt(noteEl.dataset.noteId || "0"))
-    }, [])
+        if (noteEl) startEditing(parseInt(noteEl.dataset.noteId || "0"))
+    }, [startEditing])
 
 
     const patchNote = useCallback((id: number, changes: Partial<Note>) => {
@@ -115,7 +119,24 @@ export function useBoard() {
         })
 
         setEditingId((curr) => curr === id ? null : curr)
+        setAnnouncement("Note deleted")
     }, [])
+
+    const moveNoteBy = useCallback((id: number, dx: number, dy: number) => {
+        const note = notes.find(n => n.id === id)
+        if (!note) return
+        const next = { x: note.x + dx, y: note.y + dy }
+        patchNote(id, next)
+        updateNote(id, { ...note, ...next })
+    }, [notes, patchNote, updateNote])
+
+    const resizeNoteBy = useCallback((id: number, dw: number, dh: number) => {
+        const note = notes.find(n => n.id === id)
+        if (!note) return
+        const next = resize(note, { x: dw, y: dh })
+        patchNote(id, next)
+        updateNote(id, { ...note, ...next })
+    }, [notes, patchNote, updateNote])
 
 
     const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -231,6 +252,10 @@ export function useBoard() {
         draggingId,
         trashRef,
         addNote,
+        moveNoteBy,
+        resizeNoteBy,
+        deleteNote,
+        startEditing,
         announcement,
     }
 }

@@ -1,4 +1,4 @@
-import { memo, type CSSProperties } from "react";
+import { memo, useEffect, useRef, type CSSProperties, type KeyboardEvent } from "react";
 import type { Note, NoteColor, } from "../domain/note"
 import { MoreHorizontal } from "lucide-react";
 
@@ -10,7 +10,14 @@ interface StickyNoteProps {
     editing?: boolean;
     onChange?: (id: number, changes: Partial<Note>) => void
     onStopEditing?: () => void
+    onMove?: (id: number, dx: number, dy: number) => void
+    onResize?: (id: number, dw: number, dh: number) => void
+    onDelete?: (id: number) => void
+    onStartEditing?: (id: number) => void
 }
+
+const STEP = 8
+const STEP_LARGE = 32
 
 const COLOR_CLASSES: Record<NoteColor, string> = {
     "indigo": "bg-indigo-200",
@@ -44,6 +51,26 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         })
     }
 
+    const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+        if ((e.target as HTMLElement).tagName === "TEXTAREA") return
+
+        if (e.key.startsWith("Arrow")) {
+            e.preventDefault()
+            const step = e.shiftKey ? STEP_LARGE : STEP
+            const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0
+            const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0
+            if (e.altKey) onResize?.(note.id, dx, dy)
+            else onMove?.(note.id, dx, dy)
+        } else if (e.key === "Delete" || e.key === "Backspace") {
+            e.preventDefault()
+            onDelete?.(note.id)
+        } else if (e.key === "Enter" || e.key === "F2") {
+            e.preventDefault()
+            onStartEditing?.(note.id)
+        }
+    }
+
+    return <div
         ref={noteRef}
         className={cls}
         style={style}
@@ -53,6 +80,8 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         aria-roledescription="sticky note"
         aria-label={note.text || "Empty note"}
         aria-describedby="board-instructions"
+        onKeyDown={onKeyDown}
+    >
         <div className="flex items-center w-full border-b py-2  p-4">
             <MoreHorizontal className="size-4 text-neutral-400" aria-hidden="true"></MoreHorizontal>
         </div>
