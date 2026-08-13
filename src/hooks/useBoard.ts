@@ -188,7 +188,7 @@ export function useBoard() {
 
     useEffect(() => {
         load()
-    }, [])
+    }, [load])
 
     const draggingId = gesture.current?.kind === "move" ? gesture.current.id : null
 
