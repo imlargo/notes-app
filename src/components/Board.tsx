@@ -23,8 +23,13 @@ export function Board() {
         resizeNoteBy,
         deleteNote,
         startEditing,
+        activateNote,
         announcement,
         isLoading,
+        storageType,
+        changeStorage,
+        toolbarColor,
+        cycleColor,
     } = useBoard();
 
     const addButtonRef = useRef<HTMLButtonElement>(null)
@@ -47,6 +52,16 @@ export function Board() {
 
             <div aria-live="polite" className="sr-only">{announcement}</div>
 
+            <select
+                value={storageType}
+                onChange={(e) => changeStorage(e.target.value as typeof storageType)}
+                aria-label="Storage backend"
+                className="fixed top-4 right-4 z-20 pointer-events-auto border rounded-full bg-white px-4 py-2"
+            >
+                <option value="memory">Memory (resets on reload)</option>
+                <option value="local">Local storage (persists)</option>
+            </select>
+
             {isLoading && (
                 <div role="status" className="fixed top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-x-2 bg-neutral-900 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-sm pointer-events-none">
                     <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
@@ -64,6 +79,7 @@ export function Board() {
                     onResize={resizeNoteBy}
                     onDelete={handleDelete}
                     onStartEditing={startEditing}
+                    onActivate={activateNote}
 
                     key={note.id} note={note} ></StickyNote>
             ))}
@@ -92,7 +108,7 @@ export function Board() {
                     <span>imlargo.dev</span>
                 </a>
 
-                <Toolbar ref={addButtonRef} onAddNote={addNote} />
+                <Toolbar ref={addButtonRef} onAddNote={addNote} color={toolbarColor} onCycleColor={cycleColor} />
 
                 {/* no pointer events, useBoard just reads its position through trashRef */}
                 <div aria-hidden="true" className="trash aspect-square p-4 border border-red-800 bg-red-600/30 rounded-xl flex items-center justify-center pointer-events-none" ref={trashRef}>

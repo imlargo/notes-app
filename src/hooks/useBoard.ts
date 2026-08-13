@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { randomColor, type Note } from "../domain/note";
+import { randomColor, nextColor, type Note, type NoteColor } from "../domain/note";
 import { NoteService } from "../services/note";
 import { MockNoteRepository } from "../services/memory-note-repository";
+import { LocalStorageRepository } from "../services/local-note-repository";
+import type { NoteRepository } from "../services/repository";
 import { contains, rectFromPoints, resize, type Point, type Rect } from "../domain/geometry";
 import { notesReducer } from "../state/notesReducer";
 
@@ -10,6 +12,12 @@ type Gesture =
     | { kind: "create", origin: Point }
     | { kind: "move", id: number, grab: Point }
     | { kind: "resize", id: number, start: Rect, from: Point }
+
+export type StorageType = "memory" | "local"
+
+function createRepository(type: StorageType): NoteRepository {
+    return type === "local" ? new LocalStorageRepository() : new MockNoteRepository()
+}
 
 
 export function useBoard() {
@@ -20,13 +28,16 @@ export function useBoard() {
     const [pendingFocusId, setPendingFocusId] = useState<number | null>(null)
     const [announcement, setAnnouncement] = useState("")
     const [pendingCount, setPendingCount] = useState(0)
+    const [storageType, setStorageType] = useState<StorageType>("memory")
+    const [selectedColor, setSelectedColor] = useState<NoteColor>(() => randomColor())
+    const [activeNoteId, setActiveNoteId] = useState<number | null>(null)
 
     const trashRef = useRef<HTMLDivElement>(null)
 
     const boardOrigin = useRef<Point>({ x: 0, y: 0 })
     const gesture = useRef<Gesture | null>(null)
 
-    const noteService = useRef(new NoteService(new MockNoteRepository()))
+    const noteService = useRef(new NoteService(createRepository("memory")))
 
     const withPending = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
         setPendingCount(c => c + 1)
@@ -65,10 +76,19 @@ export function useBoard() {
         withPending(() => noteService.current.getNotes()).then((data) => dispatch({ type: "load", notes: data }))
     }, [withPending])
 
-
+    // swaps the backend and reloads from it, super simple, no migration between the two
+    const changeStorage = useCallback((type: StorageType) => {
+        setStorageType(type)
+        noteService.current = new NoteService(createRepository(type))
+        load()
+    }, [load])
 
     const startEditing = useCallback((id: number) => {
         setEditingId(id)
+    }, [])
+
+    const activateNote = useCallback((id: number) => {
+        setActiveNoteId(id)
     }, [])
 
     const onDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -93,6 +113,18 @@ export function useBoard() {
         patchNote(id, updated)
     }, [patchNote, withPending])
 
+    // if a note is active (last one focused), cycle its color instead of the default for new notes
+    const cycleColor = useCallback(() => {
+        const active = activeNoteId !== null ? notes.find(n => n.id === activeNoteId) : undefined
+        if (active) {
+            const next = { color: nextColor(active.color) }
+            patchNote(active.id, next)
+            updateNote(active.id, { ...active, ...next })
+        } else {
+            setSelectedColor((c) => nextColor(c))
+        }
+    }, [activeNoteId, notes, patchNote, updateNote])
+
     const stopEditing = useCallback(() => {
         if (editingId === null) return
 
@@ -105,14 +137,14 @@ export function useBoard() {
     }, [editingId, notes, updateNote])
 
     const createNote = useCallback(async (rect: Rect) => {
-        const created = await withPending(() => noteService.current.createNote({ ...rect, text: "", color: randomColor() }))
+        const created = await withPending(() => noteService.current.createNote({ ...rect, text: "", color: selectedColor }))
         dispatch({
             type: "add",
             note: created
         })
         setAnnouncement("Note created")
         return created
-    }, [withPending])
+    }, [withPending, selectedColor])
 
     // keyboard-only way to create a note, since drag-to-create has no keyboard equivalent
     const addNote = useCallback(async () => {
@@ -129,6 +161,7 @@ export function useBoard() {
         })
 
         setEditingId((curr) => curr === id ? null : curr)
+        setActiveNoteId((curr) => curr === id ? null : curr)
         setAnnouncement("Note deleted")
     }, [withPending])
 
@@ -248,6 +281,9 @@ export function useBoard() {
     // reading the ref directly is fine, patchNote already rerenders on every move
     const draggingId = gesture.current?.kind === "move" ? gesture.current.id : null
 
+    const activeNote = activeNoteId !== null ? notes.find(n => n.id === activeNoteId) : undefined
+    const toolbarColor = activeNote?.color ?? selectedColor
+
     return {
         notes,
         onPointerDown,
@@ -266,7 +302,12 @@ export function useBoard() {
         resizeNoteBy,
         deleteNote,
         startEditing,
+        activateNote,
         announcement,
         isLoading: pendingCount > 0,
+        storageType,
+        changeStorage,
+        toolbarColor,
+        cycleColor,
     }
 }

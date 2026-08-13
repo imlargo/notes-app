@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, type CSSProperties, type KeyboardEvent } from "react";
-import type { Note, NoteColor, } from "../domain/note"
+import { COLOR_CLASSES, type Note } from "../domain/note"
 import { MoreHorizontal } from "lucide-react";
 
 interface StickyNoteProps {
@@ -14,22 +14,13 @@ interface StickyNoteProps {
     onResize?: (id: number, dw: number, dh: number) => void
     onDelete?: (id: number) => void
     onStartEditing?: (id: number) => void
+    onActivate?: (id: number) => void
 }
 
 const STEP = 8
 const STEP_LARGE = 32
 
-const COLOR_CLASSES: Record<NoteColor, string> = {
-    "indigo": "bg-indigo-200",
-    "amber": "bg-amber-200",
-    "rose": "bg-rose-200",
-    "emerald": "bg-emerald-200",
-    "sky": "bg-sky-200",
-    "fuchsia": "bg-fuchsia-200",
-    "lime": "bg-lime-200",
-}
-
-export const StickyNote = memo(({ note, className, fading, editing, onChange, onStopEditing, onMove, onResize, onDelete, onStartEditing }: StickyNoteProps) => {
+export const StickyNote = memo(({ note, className, fading, editing, onChange, onStopEditing, onMove, onResize, onDelete, onStartEditing, onActivate }: StickyNoteProps) => {
     const noteRef = useRef<HTMLDivElement>(null)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -81,6 +72,7 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         aria-label={note.text || "Empty note"}
         aria-describedby="board-instructions"
         onKeyDown={onKeyDown}
+        onFocus={() => onActivate?.(note.id)}
     >
         <div className="flex items-center w-full border-b py-2  p-4">
             <MoreHorizontal className="size-4 text-neutral-400" aria-hidden="true"></MoreHorizontal>
