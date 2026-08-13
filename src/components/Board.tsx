@@ -30,6 +30,8 @@ export function Board() {
                 Arrow keys move the focused note, hold shift to move further, hold alt to resize instead, enter opens it for editing, delete removes it.
             </p>
 
+            <div aria-live="polite" className="sr-only">{announcement}</div>
+
             {notes.map((note) => (
                 <StickyNote
                     fading={overTrash && draggingId === note.id}
