@@ -37,14 +37,17 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         })
     }
 
-    return <div className={cls} style={style} data-note-id={note.id} >
+        aria-roledescription="sticky note"
+        aria-label={note.text || "Empty note"}
+        aria-describedby="board-instructions"
         <div className="flex items-center w-full border-b py-2  p-4">
-            <MoreHorizontal className="size-4 text-neutral-400"></MoreHorizontal>
+            <MoreHorizontal className="size-4 text-neutral-400" aria-hidden="true"></MoreHorizontal>
         </div>
 
         <div className="w-full  p-4">
             <textarea
                 className="text-neutral-600 w-full max-h-max outline-none bg-none"
+                aria-label="Note text"
 
                 value={note.text}
                 onChange={(e) => onTextChange(e.target.value)}
@@ -62,7 +65,7 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         </div>
 
         {/* just a hit target, useBoard reads this attribute on pointerdown */}
-        <div data-resize-handle className="absolute -bottom-1.5 -right-1.5 size-4 bg-white border border-purple-500">
+        <div data-resize-handle aria-hidden="true" className="absolute -bottom-1.5 -right-1.5 size-4 bg-white border border-purple-500">
         </div>
     </div>
 })

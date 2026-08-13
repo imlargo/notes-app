@@ -26,6 +26,10 @@ export function Board() {
             onDoubleClick={onDoubleClick}
         >
 
+            <p id="board-instructions" className="sr-only">
+                Arrow keys move the focused note, hold shift to move further, hold alt to resize instead, enter opens it for editing, delete removes it.
+            </p>
+
             {notes.map((note) => (
                 <StickyNote
                     fading={overTrash && draggingId === note.id}
@@ -50,7 +54,7 @@ export function Board() {
             </div>)}
 
             {/* no pointer events, useBoard just reads its position through trashRef */}
-            <div className="flex items-center justify-end fixed bottom-6 inset-x-0 pointer-events-none px-4">
+            <div aria-hidden="true" className="flex items-center justify-end fixed bottom-6 inset-x-0 pointer-events-none px-4">
                 <div className="trash aspect-square p-4 border border-red-800 bg-red-600/30 rounded-xl flex items-center justify-center pointer-events-none" ref={trashRef}>
                     <Trash className="size-5 text-red-800"></Trash>
                 </div>
