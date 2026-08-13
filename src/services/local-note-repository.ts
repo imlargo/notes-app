@@ -2,6 +2,7 @@ import { randomColor, type Note } from "../domain/note";
 import { sleep } from "../lib/sleep";
 import type { NoteRepository } from "./repository";
 
+// sleep just to fake network latency like the other repo
 const STORAGE_KEY = "notes"
 
 function loadNotes(): Note[] {

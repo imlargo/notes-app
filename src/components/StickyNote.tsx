@@ -59,7 +59,7 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
             </textarea>
         </div>
 
-        {/* marker for useBoard's hit-testing, no handlers attached here */}
+        {/* just a hit target, useBoard reads this attribute on pointerdown */}
         <div data-resize-handle className="absolute -bottom-1.5 -right-1.5 size-4 bg-white border border-purple-500">
         </div>
     </div>

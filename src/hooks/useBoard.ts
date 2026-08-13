@@ -5,6 +5,7 @@ import { MockNoteRepository } from "../services/memory-note-repository";
 import { contains, rectFromPoints, resize, type Point, type Rect } from "../domain/geometry";
 import { notesReducer } from "../state/notesReducer";
 
+// ref not state, this updates on every pointermove
 type Gesture =
     | { kind: "create", origin: Point }
     | { kind: "move", id: number, grab: Point }
@@ -70,6 +71,7 @@ export function useBoard() {
     }, [])
 
 
+    // this actually persists it, patchNote above is just the optimistic update
     const updateNote = useCallback(async (id: number, note: Partial<Note>) => {
         const updated = await noteService.current.updateNote(id, note)
         patchNote(id, updated)
@@ -109,13 +111,13 @@ export function useBoard() {
     const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
 
-        // On clicking input 
         if (target.closest("textarea")) return
 
         const r = e.currentTarget.getBoundingClientRect();
         boardOrigin.current = { x: r.left, y: r.top }
         const point = toLocal(e)
 
+        // resize handle overlaps the note so it has to win the hit test first
         const isResize = target.closest("[data-resize-handle]") !== null
         const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
         const note = noteEl ? notes.find((n) => n.id === parseInt(noteEl.dataset.noteId || "0")) : undefined
@@ -141,6 +143,7 @@ export function useBoard() {
             gesture.current = { kind: "create", origin: point }
         }
 
+        // so we keep getting move/up events even if the cursor leaves the board
         e.currentTarget.setPointerCapture(e.pointerId)
     }, [notes, bringToFront, toLocal])
 
@@ -194,6 +197,7 @@ export function useBoard() {
         load()
     }, [load])
 
+    // reading the ref directly is fine, patchNote already rerenders on every move
     const draggingId = gesture.current?.kind === "move" ? gesture.current.id : null
 
     return {

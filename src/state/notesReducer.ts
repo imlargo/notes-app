@@ -28,6 +28,7 @@ export function notesReducer(state: Note[], action: Action): Note[] {
             return state.filter((n) => n.id !== action.id)
 
         case "bringToFront": {
+            // z order is just array order, moving to front = moving to the end
             const note = state.find((n) => n.id === action.id)
             if (!note) return state
             if (state[state.length - 1]?.id === action.id) return state

@@ -1,5 +1,6 @@
 import type { Rect } from "./geometry"
 
+// keep synced w/ COLOR_CLASSES in StickyNote
 export const NOTE_COLORS = ["indigo", "amber", "rose", "emerald", "sky"]
 export type NoteColor = (typeof NOTE_COLORS)[number]
 

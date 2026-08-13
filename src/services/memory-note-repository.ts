@@ -8,6 +8,7 @@ let _mockNotes: Note[] = [
     { id: 3, text: "Note 3", x: 300, y: 10, w: 150, h: 125, color: randomColor() }
 ]
 
+// counter instead of max(ids)+1 so we don't reuse an id after a delete
 let _nextId = _mockNotes.reduce((max, n) => Math.max(max, n.id), 0) + 1;
 
 export class MockNoteRepository implements NoteRepository {
