@@ -1,4 +1,6 @@
+import { useRef } from "react";
 import { StickyNote } from "./StickyNote";
+import { Toolbar } from "./Toolbar";
 import { Trash } from "lucide-react";
 import { useBoard } from "../hooks/useBoard";
 
@@ -15,8 +17,12 @@ export function Board() {
         stopEditing,
         draft,
         trashRef,
-        draggingId
+        draggingId,
+        addNote,
+        announcement,
     } = useBoard();
+
+    const addButtonRef = useRef<HTMLButtonElement>(null)
 
     return (
         <div className="board canvas-grid w-full h-full relative select-none"
@@ -55,9 +61,13 @@ export function Board() {
 
             </div>)}
 
-            {/* no pointer events, useBoard just reads its position through trashRef */}
-            <div aria-hidden="true" className="flex items-center justify-end fixed bottom-6 inset-x-0 pointer-events-none px-4">
-                <div className="trash aspect-square p-4 border border-red-800 bg-red-600/30 rounded-xl flex items-center justify-center pointer-events-none" ref={trashRef}>
+            <div className="flex items-center justify-between fixed bottom-6 inset-x-0 pointer-events-none px-4">
+                <div></div>
+
+                <Toolbar ref={addButtonRef} onAddNote={addNote} />
+
+                {/* no pointer events, useBoard just reads its position through trashRef */}
+                <div aria-hidden="true" className="trash aspect-square p-4 border border-red-800 bg-red-600/30 rounded-xl flex items-center justify-center pointer-events-none" ref={trashRef}>
                     <Trash className="size-5 text-red-800"></Trash>
                 </div>
             </div>

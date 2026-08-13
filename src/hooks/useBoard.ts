@@ -17,6 +17,8 @@ export function useBoard() {
     const [draft, setDraft] = useState<Rect | null>(null)
     const [editingId, setEditingId] = useState<number | null>(null)
     const [overTrash, setOverTrash] = useState<boolean>(false)
+    const [pendingFocusId, setPendingFocusId] = useState<number | null>(null)
+    const [announcement, setAnnouncement] = useState("")
 
     const trashRef = useRef<HTMLDivElement>(null)
 
@@ -89,13 +91,21 @@ export function useBoard() {
     }, [editingId, notes, updateNote])
 
     const createNote = useCallback(async (rect: Rect) => {
-        const created = await noteService.current.createNote({ ...rect, color: randomColor() })
+        const created = await noteService.current.createNote({ ...rect, text: "", color: randomColor() })
         dispatch({
             type: "add",
             note: created
         })
+        setAnnouncement("Note created")
+        return created
     }, [])
 
+    // keyboard-only way to create a note, since drag-to-create has no keyboard equivalent
+    const addNote = useCallback(async () => {
+        const offset = (notes.length % 6) * 24
+        const created = await createNote({ x: 40 + offset, y: 40 + offset, w: 160, h: 130 })
+        setPendingFocusId(created.id)
+    }, [notes.length, createNote])
 
     const deleteNote = useCallback(async (id: number) => {
         await noteService.current.deleteNote(id)
@@ -111,7 +121,7 @@ export function useBoard() {
     const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
 
-        if (target.closest("textarea")) return
+        if (target.closest("textarea") || target.closest("button")) return
 
         const r = e.currentTarget.getBoundingClientRect();
         boardOrigin.current = { x: r.left, y: r.top }
@@ -197,6 +207,13 @@ export function useBoard() {
         load()
     }, [load])
 
+    // focus a note right after creating it via the add-note button, keyboard-only path
+    useEffect(() => {
+        if (pendingFocusId === null) return
+        document.querySelector<HTMLElement>(`[data-note-id="${pendingFocusId}"]`)?.focus()
+        setPendingFocusId(null)
+    }, [pendingFocusId])
+
     // reading the ref directly is fine, patchNote already rerenders on every move
     const draggingId = gesture.current?.kind === "move" ? gesture.current.id : null
 
@@ -212,6 +229,8 @@ export function useBoard() {
         stopEditing,
         draft,
         draggingId,
-        trashRef
+        trashRef,
+        addNote,
+        announcement,
     }
 }
