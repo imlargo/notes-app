@@ -1,5 +1,5 @@
 import { Toolbar } from "./Toolbar";
-import { type Note } from "../domain/note";
+import { randomColor, type Note } from "../domain/note";
 import { StickyNote } from "./StickyNote";
 import { Trash } from "lucide-react";
 import { useBoard } from "../hooks/useBoard";
@@ -39,7 +39,7 @@ export function Board() {
             ))}
 
 
-            {draft && (<StickyNote className="pointer-events-none" note={draft as Note} ></StickyNote>)}
+            {draft && (<StickyNote className="pointer-events-none" note={{ ...draft} as Note} ></StickyNote>)}
 
             <div className="flex items-center justify-between fixed bottom-6 inset-x-0 pointer-events-none px-4">
                 <div></div>

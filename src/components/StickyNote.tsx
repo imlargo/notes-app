@@ -28,7 +28,7 @@ export function StickyNote({ note, className, fading, editing, onChange, onStopE
         height: note.h,
     }
 
-    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border min-w-12 min-h-24 ${className} ${fading && "opacity-50"} ${COLOR_CLASSES[note.color]} `
+    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border min-w-12 min-h-24 ${className} ${fading && "opacity-50"} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
 
     const onTextChange = (text: string) => {
         onChange?.(note.id, {
