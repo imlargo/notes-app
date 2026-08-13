@@ -39,7 +39,17 @@ export function Board() {
             ))}
 
 
-            {draft && (<StickyNote className="pointer-events-none" note={{ ...draft} as Note} ></StickyNote>)}
+            {draft && (<div
+                style={{
+                    transform: `translate(${draft.x}px, ${draft.y}px)`,
+                    width: draft.w,
+                    height: draft.h,
+                }}
+                className={`cursor-grab flex flex-col absolute top-0 left-0 border overflow-hidden border-dashed bg-neutral-50 opacity-80 pointer-events-none`}
+            >
+
+
+            </div>)}
 
             <div className="flex items-center justify-between fixed bottom-6 inset-x-0 pointer-events-none px-4">
                 <div></div>
