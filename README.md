@@ -1,66 +1,59 @@
 # Sticky Notes
 
-Single-page sticky notes board
+Single page sticky notes board. React, TypeScript and Vite, no component or drag libraries.
 
-## Getting started
+## Running it
 
-Install the dependencies and start the dev server:
 ```bash
 npm install
 npm run dev
 ```
 
-## Features
+Build and preview the production bundle
 
-The four required ones are there:
+```bash
+npm run build
+npm run preview
+```
 
-* Create a note by dragging on empty canvas
-* Resize by dragging the corner handle
-* Move by dragging
-* Delete by dragging onto the trash
+## What it does
 
-Bonus:
+All four of the required features are there
 
-* Edit text in place (double click)
-* Bring to front on interaction
-* localStorage persistence, restored on load
-* Note colors, cycled from the toolbar
-* Async repository layer with mocked latency, ready to swap for a real API
+* Drag on empty canvas to create a note the size of what you dragged
+* Drag a note to move it
+* Drag the corner handle to resize
+* Drop a note on the trash to delete it
 
-there is also a runtime switch between the two backends, a loading indicator, keyboard/accessibility support, in-emory is the default backend so notes reset on reload until you switch it
+And the optional ones
 
-## Structure
+* Double click a note to edit its text
+* Notes come to front when you touch them
+* Notes are saved through an async repository, in-memory by default with a localStorage backend you can switch to from the top right corner
+* Colors, the toolbar button changes the color of the focused note or picks the color for the next one
 
-domain/
-types and geometry, no React
+Everything also works from the keyboard. Tab moves between notes, arrows move the focused one, hold shift for a bigger step and alt to resize instead, enter edits, escape leaves the text, delete removes it.
 
-services/
-NoteRepository interface, in-memory and localStorage
+## Layout
 
-state/
-notesReducer
+```
+domain/      model and geometry, no React
+services/    NoteRepository and its implementations
+state/       notes reducer
+hooks/       useBoard
+components/  Board, StickyNote, Toolbar
+```
 
-hooks/
-useBoard
+The architecture and the reasoning behind it are in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-components/
-Board, StickyNote, Toolbar
+## What I'd do next
 
-## Architecture
+Tests first, domain/ and the reducer are pure and were written with that in mind. After that split useBoard, it handles gestures and data access and only the first one is really its job. Optimistic writes have no rollback and there's no error UI. Notes can also be dropped mostly off screen since nothing clamps them.
 
-layers only depend on the one below, `domain/` is types and math with no React and no side effects, so the geometry is testable on its own, `services/` puts persistence behind a `NoteRepository` interface with two async implementations, integrating real api is just one more class implementation.
+## Architecture descripcion (requested)
 
-dragging runs off one pointerdown/move/up handler on the board instead of listeners per note, a `Gesture` union in a ref tracks the current drag and pointerdown hit tests what you grabbed, resize handle first since it overlaps the note, then the body, then empty canvas, it lives in a ref because it changes on every pointermove and nothing renders off it `StickyNote` just renders and forwards events up
+The app is layered so the logic and the persistence don't depend on React. domain/ is the model and the geometry, pure functions I can test without mounting anything. services/ hides persistence behind an async NoteRepository with two implementations, in-memory and localStorage. Both have fake latency on purpose so the UI is written against real async I/O. A REST backend would be one more class and nothing above it changes. state/ is a reducer and components/ only render.
 
-`notesReducer` owns the list and the array order is the z order, so bring to front is a move to the end Writes are split in two: `patchNote` updates locally on every frame to keep dragging smooth, and the repository only gets written once the gesture ends A pending counter wraps every async call and feeds the loading indicator
+The main decision on the interaction side was to drag with one set of pointer handlers on the board instead of wiring listeners per note. Hit testing happens on pointerdown and the current gesture is a union kept in a ref since it changes every frame and nothing renders from it. The repository only gets written when the gesture ends. That keeps dragging at frame rate and keeps the async layer out of the hot path
 
-## Trade-offs
-
-Kept simple on purpose given the time
-
-* No tests `domain/` and the reducer are pure and were written to be testable, first thing I'd add
-* `useBoard` does too much, pulling the data side into its own hook is the obvious next step
-* Notes can be dropped mostly off screen, nothing clamps them
-* Optimistic writes never roll back and there's no error UI
-* Text saves on blur, not per keystroke
-* Desktop only, no touch tuning
+Accessibility wasn't an afterthought, it shaped the component API. A drag only interface is invisible to a keyboard so every note is focusable and can be moved, resized, edited and deleted without a mouse. Focus goes somewhere sensible after a note disappears and changes get announced. Types work the same way, the gesture is a union instead of a pile of flags so the wrong state doesn't compile. That part matters more to me than squeezing in every feature-
