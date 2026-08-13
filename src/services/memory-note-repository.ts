@@ -1,4 +1,5 @@
 import { randomColor, type Note } from "../domain/note";
+import { sleep } from "../lib/sleep";
 import type { NoteRepository } from "./repository";
 
 let idcounter = 3;
@@ -18,13 +19,13 @@ let _mockNotes = [
 export class MockNoteRepository implements NoteRepository {
 
     async list(): Promise<Note[]> {
-        await this._simulateDelay()
+        await sleep(500);
 
         return _mockNotes;
     }
 
     async create(note: Partial<Note>) {
-        //await this._simulateDelay();
+        await sleep(500);;
         const id: number = generateNewID()
 
         const newNote = note as Note
@@ -34,7 +35,7 @@ export class MockNoteRepository implements NoteRepository {
     }
 
     async delete(noteId: number) {
-        await this._simulateDelay();
+        await sleep(500);;
         _mockNotes = _mockNotes.filter((note) => note.id !== noteId)
     }
 
