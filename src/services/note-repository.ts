@@ -1,4 +1,4 @@
-import type { Note } from "../domain/note";
+import { randomColor, type Note } from "../domain/note";
 
 let idcounter = 3;
 
@@ -9,9 +9,9 @@ function generateNewID() {
 }
 
 let _mockNotes = [
-    { id: generateNewID(), text: "Note 1", x: 10, y: 10, w: 150, h: 125 },
-    { id: generateNewID(), text: "Note 2", x: 50, y: 10, w: 150, h: 125 },
-    { id: generateNewID(), text: "Note 3", x: 300, y: 10, w: 150, h: 125 }
+    { id: generateNewID(), text: "Note 1", x: 10, y: 10, w: 150, h: 125 , color: randomColor()},
+    { id: generateNewID(), text: "Note 2", x: 50, y: 10, w: 150, h: 125 , color: randomColor()},
+    { id: generateNewID(), text: "Note 3", x: 300, y: 10, w: 150, h: 125, color: randomColor() }
 ]
 
 export class MockNoteRepository {

@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
-import type { Note } from "../domain/note"
-import { DotSquare, Grab, Grip } from "lucide-react";
+import type { Note, NoteColor, } from "../domain/note"
+import {  Grip } from "lucide-react";
 
 interface StickyNoteProps {
     note: Note
@@ -12,6 +12,14 @@ interface StickyNoteProps {
     onStopEditing?: () => void
 }
 
+const COLOR_CLASSES: Record<NoteColor, string> = {
+    "indigo": "bg-indigo-200",
+    "amber": "bg-amber-200",
+    "rose": "bg-rose-200",
+    "emerald": "bg-emerald-200",
+    "sky": "bg-sky-200",
+}
+
 // TODO: primitives and memo
 export function StickyNote({ note, className, fading, editing, onChange, onStopEditing }: StickyNoteProps) {
     const style: CSSProperties = {
@@ -20,7 +28,7 @@ export function StickyNote({ note, className, fading, editing, onChange, onStopE
         height: note.h,
     }
 
-    const cls = `cursor-grab flex flex-col bg-indigo-200 absolute top-0 left-0 border min-w-12 min-h-24 ${className} ${fading && "opacity-50"} `
+    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border min-w-12 min-h-24 ${className} ${fading && "opacity-50"} ${COLOR_CLASSES[note.color]} `
 
     const onTextChange = (text: string) => {
         onChange?.(note.id, {
@@ -32,7 +40,6 @@ export function StickyNote({ note, className, fading, editing, onChange, onStopE
         <div className="flex items-center w-full border-b py-2  p-4">
             <Grip className="size-4 text-neutral-400"></Grip>
         </div>
-
 
         <div className="w-full  p-4">
             <textarea

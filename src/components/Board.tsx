@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Toolbar } from "./Toolbar";
-import type { Note } from "../domain/note";
+import { randomColor, type Note } from "../domain/note";
 import { NoteService } from "../services/note";
 import { MockNoteRepository } from "../services/note-repository";
 import { StickyNote } from "./StickyNote";
@@ -164,7 +164,7 @@ export function Board() {
     }
 
     async function createNote(rect: Rect) {
-        const created = await noteService.createNote({ ...rect })
+        const created = await noteService.createNote({ ...rect, color: randomColor() })
         setNotes((prev) => [...prev, created])
     }
 
