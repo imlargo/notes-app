@@ -23,7 +23,7 @@ export function useBoard() {
     const boardOrigin = useRef<Point>({ x: 0, y: 0 })
     const gesture = useRef<Gesture | null>(null)
 
-    const noteService = new NoteService(new MockNoteRepository());
+    const noteService = useRef(new NoteService(new MockNoteRepository()))
 
     const toLocal = (e: React.PointerEvent): Point => ({
         x: e.clientX - boardOrigin.current.x,
@@ -50,7 +50,7 @@ export function useBoard() {
 
 
     const load = useCallback(() => {
-        noteService.getNotes().then((data) => dispatch({ type: "load", notes: data }))
+        noteService.current.getNotes().then((data) => dispatch({ type: "load", notes: data }))
     }, [noteService])
 
     const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -154,7 +154,7 @@ export function useBoard() {
     }
 
     async function createNote(rect: Rect) {
-        const created = await noteService.createNote({ ...rect, color: randomColor() })
+        const created = await noteService.current.createNote({ ...rect, color: randomColor() })
         dispatch({
             type: "add",
             note: created
@@ -162,7 +162,7 @@ export function useBoard() {
     }
 
     async function updateNote(id: number, note: Partial<Note>) {
-        const updated = await noteService.updateNote(id, note)
+        const updated = await noteService.current.updateNote(id, note)
         patchNote(id, updated)
 
     }
@@ -176,7 +176,7 @@ export function useBoard() {
     }
 
     async function deleteNote(id: number) {
-        await noteService.deleteNote(id)
+        await noteService.current.deleteNote(id)
         dispatch({
             type: "remove",
             id
@@ -190,7 +190,7 @@ export function useBoard() {
         load()
     }, [])
 
-    const draggingId = gesture.current?.kind === "move" && gesture.current.id
+    const draggingId = gesture.current?.kind === "move" ? gesture.current.id : null
 
     return {
         notes,
