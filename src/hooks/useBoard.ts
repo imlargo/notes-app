@@ -107,7 +107,7 @@ export function useBoard() {
             const rect = resize(g.start, d)
             patchNote(g.id, { ...rect })
         }
-    }, [notes])
+    }, [])
 
     const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
@@ -134,13 +134,13 @@ export function useBoard() {
 
         gesture.current = null
         setDraft(null)
-    }, [notes])
+    }, [notes, noteService])
 
-    const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const onDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
         const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
         if (noteEl) setEditingId(parseInt(noteEl.dataset.noteId || "0"))
-    }
+    }, [])
 
     function stopEditing() {
         if (editingId === null) return
