@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Note, NoteColor, } from "../domain/note"
-import {  Grip } from "lucide-react";
+import { Grip } from "lucide-react";
 
 interface StickyNoteProps {
     note: Note
