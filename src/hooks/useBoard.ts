@@ -24,12 +24,12 @@ export function useBoard() {
 
     const noteService = useRef(new NoteService(new MockNoteRepository()))
 
-    const toLocal = (e: React.PointerEvent): Point => ({
+    const toLocal = useCallback((e: React.PointerEvent): Point => ({
         x: e.clientX - boardOrigin.current.x,
         y: e.clientY - boardOrigin.current.y,
-    })
+    }), [])
 
-    const trashRect = () => {
+    const trashRect = useCallback((): Rect | null => {
         const trash = trashRef.current?.getBoundingClientRect()
         if (!trash) return null
         return {
@@ -38,7 +38,7 @@ export function useBoard() {
             w: trash.width,
             h: trash.height
         }
-    }
+    }, [])
 
     const bringToFront = useCallback((id: number) => {
         dispatch({
@@ -142,7 +142,7 @@ export function useBoard() {
         }
 
         e.currentTarget.setPointerCapture(e.pointerId)
-    }, [notes, bringToFront])
+    }, [notes, bringToFront, toLocal])
 
     const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
@@ -160,7 +160,7 @@ export function useBoard() {
             const rect = resize(g.start, d)
             patchNote(g.id, { ...rect })
         }
-    }, [patchNote])
+    }, [patchNote, toLocal, trashRect])
 
     const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
@@ -187,7 +187,7 @@ export function useBoard() {
 
         gesture.current = null
         setDraft(null)
-    }, [notes, createNote, deleteNote, updateNote])
+    }, [notes, createNote, deleteNote, updateNote, toLocal, trashRect])
 
 
     useEffect(() => {
