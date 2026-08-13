@@ -14,7 +14,7 @@ export function StickyNote({ note }: StickyNoteProps) {
     }
 
     return <div className="cursor-grab flex flex-col bg-indigo-200 absolute top-10 left-10 border p-4 min-w-12 min-h-24 " style={style} >
-        <textarea className="text-neutral-600 w-full h-full" value={note.text}>
+        <textarea className="text-neutral-600 w-full h-full outline-none bg-none" value={note.text}>
         </textarea>
     </div>
 }
