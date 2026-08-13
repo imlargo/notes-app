@@ -28,7 +28,7 @@ export function StickyNote({ note, className, fading, editing, onChange, onStopE
         height: note.h,
     }
 
-    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border min-w-12 min-h-24 ${className} ${fading && "opacity-50"} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
+    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border overflow-hidden min-w-12 min-h-24 ${className} ${fading && "opacity-50"} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
 
     const onTextChange = (text: string) => {
         onChange?.(note.id, {
@@ -60,7 +60,7 @@ export function StickyNote({ note, className, fading, editing, onChange, onStopE
             </textarea>
         </div>
 
-        <div data-resize-handle className="absolute -bottom-1.5 -right-1.5 size-3 bg-white border border-purple-500">
+        <div data-resize-handle className="absolute -bottom-1.5 -right-1.5 size-4 bg-white border border-purple-500">
         </div>
     </div>
 }
