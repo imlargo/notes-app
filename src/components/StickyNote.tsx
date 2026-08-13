@@ -1,6 +1,6 @@
 import { memo, type CSSProperties } from "react";
 import type { Note, NoteColor, } from "../domain/note"
-import { Grip } from "lucide-react";
+import { Grip, MoreHorizontal } from "lucide-react";
 
 interface StickyNoteProps {
     note: Note
@@ -38,7 +38,7 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
 
     return <div className={cls} style={style} data-note-id={note.id} >
         <div className="flex items-center w-full border-b py-2  p-4">
-            <Grip className="size-4 text-neutral-400"></Grip>
+            <MoreHorizontal className="size-4 text-neutral-400"></MoreHorizontal>
         </div>
 
         <div className="w-full  p-4">
