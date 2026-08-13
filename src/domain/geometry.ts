@@ -9,8 +9,3 @@ export function rectFromPoints(a: Point, b: Point): Rect {
         h: Math.abs(a.y - b.y),
     }
 }
-
-export const toLocal = (e: React.PointerEvent): Point => ({
-    x: e.clientX - boardOrigin.current.x,
-    y: e.clientY - boardOrigin.current.y,
-})

@@ -4,7 +4,7 @@ import type { Note } from "../domain/note";
 import { NoteService } from "../services/note";
 import { MockNoteRepository } from "../services/note-repository";
 import { StickyNote } from "./StickyNote";
-import { rectFromPoints, toLocal, type Point, type Rect } from "../domain/geometry";
+import { rectFromPoints, type Point, type Rect } from "../domain/geometry";
 
 export function Board() {
     const [notes, setNotes] = useState<Note[]>([]);
@@ -20,10 +20,18 @@ export function Board() {
     }, [])
 
 
+    const toLocal = (e: React.PointerEvent): Point => ({
+        x: e.clientX - boardOrigin.current.x,
+        y: e.clientY - boardOrigin.current.y,
+    })
+
     const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         const r = e.currentTarget.getBoundingClientRect();
         boardOrigin.current = { x: r.left, y: r.top }
-        start.current = toLocal(e)
+
+        const point = toLocal(e)
+
+        start.current = point
         e.currentTarget.setPointerCapture(e.pointerId)
     }
 
