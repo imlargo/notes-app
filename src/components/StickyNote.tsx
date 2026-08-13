@@ -18,6 +18,8 @@ const COLOR_CLASSES: Record<NoteColor, string> = {
     "rose": "bg-rose-200",
     "emerald": "bg-emerald-200",
     "sky": "bg-sky-200",
+    "fuchsia": "bg-fuchsia-200",
+    "lime": "bg-lime-200",
 }
 
 export const StickyNote = memo(({ note, className, fading, editing, onChange, onStopEditing }: StickyNoteProps) => {
