@@ -51,6 +51,18 @@ export function Board() {
         }
     }
 
+    const bringToFront = (id: number) => {
+        setNotes((prev) => {
+            const note = prev.find((n) => n.id === id)
+            if (!note) return prev
+
+            // last one
+            if (prev[prev.length - 1]?.id === id) return prev
+
+            return [...prev.filter(n => n.id !== id), note]
+        })
+    }
+
     const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
 
@@ -64,6 +76,10 @@ export function Board() {
         const isResize = target.closest("[data-resize-handle]") !== null
         const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
         const note = noteEl ? notes.find((n) => n.id === parseInt(noteEl.dataset.noteId || "0")) : undefined
+
+        if (note) {
+            bringToFront(note.id)
+        }
 
         if (note && isResize) {
             gesture.current = {
@@ -193,7 +209,7 @@ export function Board() {
                 <div></div>
                 <Toolbar></Toolbar>
 
-                <div className="trash aspect-square p-4 border border-red-800 bg-red-600/30 rounded-xl flex items-center justify-center" ref={trashRef}>
+                <div className="trash aspect-square p-4 border border-red-800 bg-red-600/30 rounded-xl flex items-center justify-center pointer-events-none" ref={trashRef}>
                     <Trash className="size-5 text-red-800"></Trash>
                 </div>
             </div>
