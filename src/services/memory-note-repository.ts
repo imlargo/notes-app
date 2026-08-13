@@ -2,18 +2,14 @@ import { randomColor, type Note } from "../domain/note";
 import { sleep } from "../lib/sleep";
 import type { NoteRepository } from "./repository";
 
-let idcounter = 3;
-
-function generateNewID() {
-    const newID = idcounter + 1
-    idcounter += 1
-    return newID
+function generateNewID(notes: Note[]): number {
+    return notes.reduce((max, n) => Math.max(max, n.id), 0) + 1;
 }
 
-let _mockNotes = [
-    { id: generateNewID(), text: "Note 1", x: 10, y: 10, w: 150, h: 125 , color: randomColor()},
-    { id: generateNewID(), text: "Note 2", x: 50, y: 10, w: 150, h: 125 , color: randomColor()},
-    { id: generateNewID(), text: "Note 3", x: 300, y: 10, w: 150, h: 125, color: randomColor() }
+let _mockNotes: Note[] = [
+    { id: 1, text: "Note 1", x: 10, y: 10, w: 150, h: 125 , color: randomColor()},
+    { id: 2, text: "Note 2", x: 50, y: 10, w: 150, h: 125 , color: randomColor()},
+    { id: 3, text: "Note 3", x: 300, y: 10, w: 150, h: 125, color: randomColor() }
 ]
 
 export class MockNoteRepository implements NoteRepository {
@@ -26,10 +22,11 @@ export class MockNoteRepository implements NoteRepository {
 
     async create(note: Partial<Note>) {
         await sleep(500);;
-        const id: number = generateNewID()
 
-        const newNote = note as Note
-        newNote.id =  id
+        const newNote = {
+            ...note,
+            id: generateNewID(_mockNotes),
+        } as Note
         _mockNotes.push(newNote)
         return newNote
     }
