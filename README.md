@@ -4,7 +4,7 @@ Single-page sticky notes board
 
 ## Getting started
 
-Pretty much just install the dependencies and start the dev server:
+Install the dependencies and start the dev server:
 ```bash
 npm install
 npm run dev
@@ -25,7 +25,7 @@ Bonus:
 * Bring to front on interaction
 * localStorage persistence, restored on load
 * Note colors, cycled from the toolbar
-* Async repository layer with some mocked latency, so swapping it for a real API later should be pretty straightforward
+* Async repository layer with mocked latency, ready to swap for a real API
 
 there is also a runtime switch between the two backends, a loading indicator, keyboard/accessibility support, in-emory is the default backend so notes reset on reload until you switch it
 
@@ -56,7 +56,7 @@ dragging runs off one pointerdown/move/up handler on the board instead of listen
 
 ## Trade-offs
 
-Kept simple on purpose **given the time** box
+Kept simple on purpose given the time
 
 * No tests `domain/` and the reducer are pure and were written to be testable, first thing I'd add
 * `useBoard` does too much, pulling the data side into its own hook is the obvious next step
