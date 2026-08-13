@@ -19,6 +19,7 @@ export function useBoard() {
     const [overTrash, setOverTrash] = useState<boolean>(false)
     const [pendingFocusId, setPendingFocusId] = useState<number | null>(null)
     const [announcement, setAnnouncement] = useState("")
+    const [pendingCount, setPendingCount] = useState(0)
 
     const trashRef = useRef<HTMLDivElement>(null)
 
@@ -26,6 +27,15 @@ export function useBoard() {
     const gesture = useRef<Gesture | null>(null)
 
     const noteService = useRef(new NoteService(new MockNoteRepository()))
+
+    const withPending = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
+        setPendingCount(c => c + 1)
+        try {
+            return await fn()
+        } finally {
+            setPendingCount(c => c - 1)
+        }
+    }, [])
 
     const toLocal = useCallback((e: React.PointerEvent): Point => ({
         x: e.clientX - boardOrigin.current.x,
@@ -52,8 +62,8 @@ export function useBoard() {
 
 
     const load = useCallback(() => {
-        noteService.current.getNotes().then((data) => dispatch({ type: "load", notes: data }))
-    }, [])
+        withPending(() => noteService.current.getNotes()).then((data) => dispatch({ type: "load", notes: data }))
+    }, [withPending])
 
 
 
@@ -79,9 +89,9 @@ export function useBoard() {
 
     // this actually persists it, patchNote above is just the optimistic update
     const updateNote = useCallback(async (id: number, note: Partial<Note>) => {
-        const updated = await noteService.current.updateNote(id, note)
+        const updated = await withPending(() => noteService.current.updateNote(id, note))
         patchNote(id, updated)
-    }, [patchNote])
+    }, [patchNote, withPending])
 
     const stopEditing = useCallback(() => {
         if (editingId === null) return
@@ -95,14 +105,14 @@ export function useBoard() {
     }, [editingId, notes, updateNote])
 
     const createNote = useCallback(async (rect: Rect) => {
-        const created = await noteService.current.createNote({ ...rect, text: "", color: randomColor() })
+        const created = await withPending(() => noteService.current.createNote({ ...rect, text: "", color: randomColor() }))
         dispatch({
             type: "add",
             note: created
         })
         setAnnouncement("Note created")
         return created
-    }, [])
+    }, [withPending])
 
     // keyboard-only way to create a note, since drag-to-create has no keyboard equivalent
     const addNote = useCallback(async () => {
@@ -112,7 +122,7 @@ export function useBoard() {
     }, [notes.length, createNote])
 
     const deleteNote = useCallback(async (id: number) => {
-        await noteService.current.deleteNote(id)
+        await withPending(() => noteService.current.deleteNote(id))
         dispatch({
             type: "remove",
             id
@@ -120,7 +130,7 @@ export function useBoard() {
 
         setEditingId((curr) => curr === id ? null : curr)
         setAnnouncement("Note deleted")
-    }, [])
+    }, [withPending])
 
     const moveNoteBy = useCallback((id: number, dx: number, dy: number) => {
         const note = notes.find(n => n.id === id)
@@ -257,5 +267,6 @@ export function useBoard() {
         deleteNote,
         startEditing,
         announcement,
+        isLoading: pendingCount > 0,
     }
 }

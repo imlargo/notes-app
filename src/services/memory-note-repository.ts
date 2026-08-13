@@ -37,6 +37,8 @@ export class MockNoteRepository implements NoteRepository {
     }
 
     async update(noteId: number, data: Partial<Note> ) {
+        await sleep(500);
+
         const index = _mockNotes.findIndex((note) => note.id === noteId)
         const updated = {
             ..._mockNotes[index],
