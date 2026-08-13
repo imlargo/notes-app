@@ -16,4 +16,8 @@ export class NoteService {
         const created = this._repository.create(note)
         return created
     }
+
+    async updateNote(id: number, data: Partial<Note>): Promise<Note> {
+        return this._repository.update(id, data)
+    }
 }

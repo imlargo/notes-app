@@ -49,6 +49,6 @@ export class MockNoteRepository {
 
 
     async _simulateDelay() {
-        return new Promise((resolve) => setTimeout(resolve, 500))
+        return new Promise((resolve) => setTimeout(resolve, 0))
     }
 }
