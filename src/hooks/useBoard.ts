@@ -40,17 +40,71 @@ export function useBoard() {
         }
     }
 
-    const bringToFront = (id: number) => {
+    const bringToFront = useCallback((id: number) => {
         dispatch({
             type: "bringToFront",
             id: id,
         })
-    }
+    }, [])
 
 
     const load = useCallback(() => {
         noteService.current.getNotes().then((data) => dispatch({ type: "load", notes: data }))
-    }, [noteService])
+    }, [])
+
+
+
+    const onDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        const target = e.target as HTMLElement
+        const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
+        if (noteEl) setEditingId(parseInt(noteEl.dataset.noteId || "0"))
+    }, [])
+
+
+    const patchNote = useCallback((id: number, changes: Partial<Note>) => {
+        dispatch({
+            type: "patch",
+            id,
+            changes
+        })
+    }, [])
+
+
+    const updateNote = useCallback(async (id: number, note: Partial<Note>) => {
+        const updated = await noteService.current.updateNote(id, note)
+        patchNote(id, updated)
+    }, [patchNote])
+
+    const stopEditing = useCallback(() => {
+        if (editingId === null) return
+
+        const note = notes.find((n) => n.id === editingId)
+        if (note) {
+            updateNote(note.id, note)
+        }
+
+        setEditingId(null)
+    }, [editingId, notes, updateNote])
+
+    const createNote = useCallback(async (rect: Rect) => {
+        const created = await noteService.current.createNote({ ...rect, color: randomColor() })
+        dispatch({
+            type: "add",
+            note: created
+        })
+    }, [])
+
+
+    const deleteNote = useCallback(async (id: number) => {
+        await noteService.current.deleteNote(id)
+        dispatch({
+            type: "remove",
+            id
+        })
+
+        setEditingId((curr) => curr === id ? null : curr)
+    }, [])
+
 
     const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
@@ -88,7 +142,7 @@ export function useBoard() {
         }
 
         e.currentTarget.setPointerCapture(e.pointerId)
-    }, [notes])
+    }, [notes, bringToFront])
 
     const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
@@ -106,7 +160,7 @@ export function useBoard() {
             const rect = resize(g.start, d)
             patchNote(g.id, { ...rect })
         }
-    }, [])
+    }, [patchNote])
 
     const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
@@ -133,56 +187,7 @@ export function useBoard() {
 
         gesture.current = null
         setDraft(null)
-    }, [notes, noteService])
-
-    const onDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-        const target = e.target as HTMLElement
-        const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
-        if (noteEl) setEditingId(parseInt(noteEl.dataset.noteId || "0"))
-    }, [])
-
-    function stopEditing() {
-        if (editingId === null) return
-
-        const note = notes.find((n) => n.id === editingId)
-        if (note) {
-            updateNote(note.id, note)
-        }
-
-        setEditingId(null)
-    }
-
-    async function createNote(rect: Rect) {
-        const created = await noteService.current.createNote({ ...rect, color: randomColor() })
-        dispatch({
-            type: "add",
-            note: created
-        })
-    }
-
-    async function updateNote(id: number, note: Partial<Note>) {
-        const updated = await noteService.current.updateNote(id, note)
-        patchNote(id, updated)
-
-    }
-
-    const patchNote = useCallback((id: number, changes: Partial<Note>) => {
-        dispatch({
-            type: "patch",
-            id,
-            changes
-        })
-    }, [])
-
-    const deleteNote = useCallback(async (id: number) => {
-        await noteService.current.deleteNote(id)
-        dispatch({
-            type: "remove",
-            id
-        })
-
-        setEditingId((curr) => curr === id ? null : curr)
-    }, [notes, noteService])
+    }, [notes, createNote, deleteNote, updateNote])
 
 
     useEffect(() => {
