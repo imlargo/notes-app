@@ -31,7 +31,7 @@ export function Board() {
 
             {notes.map((note) => (
                 <StickyNote
-                    fading={overTrash && editingId !== note.id && draggingId === note.id}
+                    fading={overTrash && draggingId === note.id}
                     editing={editingId === note.id}
                     onChange={patchNote}
                     onStopEditing={stopEditing}
