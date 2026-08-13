@@ -4,7 +4,8 @@ import type { Note } from "../domain/note";
 import { NoteService } from "../services/note";
 import { MockNoteRepository } from "../services/note-repository";
 import { StickyNote } from "./StickyNote";
-import { rectFromPoints, resize, type Point, type Rect } from "../domain/geometry";
+import { contains, rectFromPoints, resize, type Point, type Rect } from "../domain/geometry";
+import { Trash } from "lucide-react";
 
 
 type Gesture =
@@ -16,10 +17,15 @@ export function Board() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [draft, setDraft] = useState<Rect | null>(null)
 
+
     const [editingId, setEditingId] = useState<number | null>(null)
+    const [overTrash, setOverTrash] = useState<boolean>(false)
+
+    const boardRef = useRef<HTMLDivElement>(null)
+    const trashRef = useRef<HTMLDivElement>(null)
+
 
     const boardOrigin = useRef<Point>({ x: 0, y: 0 })
-    const boardRef = useRef<HTMLDivElement>(null)
     const gesture = useRef<Gesture | null>(null)
 
     const noteService = new NoteService(new MockNoteRepository());
@@ -33,6 +39,17 @@ export function Board() {
         x: e.clientX - boardOrigin.current.x,
         y: e.clientY - boardOrigin.current.y,
     })
+
+    const trashRect = () => {
+        const trash = trashRef.current?.getBoundingClientRect()
+        if (!trash) return null
+        return {
+            x: trash.left - boardOrigin.current.x,
+            y: trash.top - boardOrigin.current.y,
+            w: trash.width,
+            h: trash.height
+        }
+    }
 
     const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
@@ -77,6 +94,8 @@ export function Board() {
             setDraft(rectFromPoints(g.origin, point))
         } else if (g.kind === "move") {
             patchNote(g.id, { x: point.x - g.grab.x, y: point.y - g.grab.y })
+            const trash = trashRect()
+            setOverTrash(trash !== null && contains(trash, point))
         } else if (g.kind === "resize") {
             const d: Point = { x: point.x - g.from.x, y: point.y - g.from.y }
             const rect = resize(g.start, d)
@@ -93,6 +112,14 @@ export function Board() {
             const rect = rectFromPoints(g.origin, point)
             if (rect.w > 8 && rect.h > 8) {
                 createNote(rect)
+            }
+        } else if (g.kind === "move") {
+            const trash = trashRect();
+            if (trash && contains(trash, point)) {
+                deleteNote(g.id)
+            } else {
+                const note = notes.find(n => n.id === g.id)
+                if (note) updateNote(note.id, note)
             }
         } else {
             const note = notes.find(n => n.id === g.id)
@@ -135,6 +162,12 @@ export function Board() {
         setNotes((prev) => prev.map((n) => n.id === id ? { ...n, ...changes } : n))
     }
 
+    async function deleteNote(id: number) {
+        await noteService.deleteNote(id)
+        setNotes((prev) => prev.filter(n => n.id !== id))
+        setEditingId((curr) => curr === id ? null : curr)
+    }
+
     return (
         <div className="board canvas-grid w-full h-full relative select-none  " ref={boardRef}
             onPointerDown={onPointerDown}
@@ -145,6 +178,7 @@ export function Board() {
 
             {notes.map((note) => (
                 <StickyNote
+                    fading={overTrash && editingId !== note.id && gesture.current?.kind === "move" && gesture.current.id === note.id}
                     editing={editingId === note.id}
                     onChange={patchNote}
                     onStopEditing={stopEditing}
@@ -155,8 +189,13 @@ export function Board() {
 
             {draft && (<StickyNote className="pointer-events-none" note={draft as Note} ></StickyNote>)}
 
-            <div className="flex items-center justify-center fixed bottom-6 inset-x-0 pointer-events-none">
+            <div className="flex items-center justify-between fixed bottom-6 inset-x-0 pointer-events-none px-4">
+                <div></div>
                 <Toolbar></Toolbar>
+
+                <div className="trash aspect-square p-4 border border-red-800 bg-red-600/30 rounded-xl flex items-center justify-center" ref={trashRef}>
+                    <Trash className="size-5 text-red-800"></Trash>
+                </div>
             </div>
         </div>
     )

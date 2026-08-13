@@ -20,4 +20,8 @@ export class NoteService {
     async updateNote(id: number, data: Partial<Note>): Promise<Note> {
         return this._repository.update(id, data)
     }
+
+    async deleteNote(id: number) {
+        return this._repository.delete(id)
+    }
 }

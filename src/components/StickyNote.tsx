@@ -6,20 +6,21 @@ interface StickyNoteProps {
     note: Note
     className?: string;
 
+    fading?: boolean;
     editing?: boolean;
     onChange?: (id: number, changes: Partial<Note>) => void
     onStopEditing?: () => void
 }
 
 // TODO: primitives and memo
-export function StickyNote({ note, className, editing, onChange, onStopEditing }: StickyNoteProps) {
+export function StickyNote({ note, className, fading, editing, onChange, onStopEditing }: StickyNoteProps) {
     const style: CSSProperties = {
         transform: `translate(${note.x}px, ${note.y}px)`,
         width: note.w,
         height: note.h,
     }
 
-    const cls = "cursor-grab flex flex-col bg-indigo-200 absolute top-0 left-0 border min-w-12 min-h-24 " + className
+    const cls = `cursor-grab flex flex-col bg-indigo-200 absolute top-0 left-0 border min-w-12 min-h-24 ${className} ${fading && "opacity-50"} `
 
     const onTextChange = (text: string) => {
         onChange?.(note.id, {
@@ -34,7 +35,6 @@ export function StickyNote({ note, className, editing, onChange, onStopEditing }
 
 
         <div className="w-full  p-4">
-
             <textarea
                 className="text-neutral-600 w-full max-h-max outline-none bg-none"
 
