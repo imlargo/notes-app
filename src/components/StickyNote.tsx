@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 import type { Note, NoteColor, } from "../domain/note"
 import { Grip } from "lucide-react";
 
@@ -21,7 +21,7 @@ const COLOR_CLASSES: Record<NoteColor, string> = {
 }
 
 // TODO: primitives and memo
-export function StickyNote({ note, className, fading, editing, onChange, onStopEditing }: StickyNoteProps) {
+export const StickyNote = memo(({ note, className, fading, editing, onChange, onStopEditing }: StickyNoteProps) => {
     const style: CSSProperties = {
         transform: `translate(${note.x}px, ${note.y}px)`,
         width: note.w,
@@ -63,4 +63,4 @@ export function StickyNote({ note, className, fading, editing, onChange, onStopE
         <div data-resize-handle className="absolute -bottom-1.5 -right-1.5 size-4 bg-white border border-purple-500">
         </div>
     </div>
-}
+})
