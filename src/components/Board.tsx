@@ -1,5 +1,3 @@
-import { Toolbar } from "./Toolbar";
-import { randomColor, type Note } from "../domain/note";
 import { StickyNote } from "./StickyNote";
 import { Trash } from "lucide-react";
 import { useBoard } from "../hooks/useBoard";
