@@ -1,32 +1,66 @@
-# React + TypeScript + Vite
+# Sticky Notes
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Single-page sticky notes board
 
-Currently, two official plugins are available:
+## Getting started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+Pretty much just install the dependencies and start the dev server:
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Features
+
+The four required ones are there:
+
+* Create a note by dragging on empty canvas
+* Resize by dragging the corner handle
+* Move by dragging
+* Delete by dragging onto the trash
+
+Bonus:
+
+* Edit text in place (double click)
+* Bring to front on interaction
+* localStorage persistence, restored on load
+* Note colors, cycled from the toolbar
+* Async repository layer with some mocked latency, so swapping it for a real API later should be pretty straightforward
+
+there is also a runtime switch between the two backends, a loading indicator, keyboard/accessibility support, in-emory is the default backend so notes reset on reload until you switch it
+
+## Structure
+
+domain/
+types and geometry, no React
+
+services/
+NoteRepository interface, in-memory and localStorage
+
+state/
+notesReducer
+
+hooks/
+useBoard
+
+components/
+Board, StickyNote, Toolbar
+
+## Architecture
+
+layers only depend on the one below, `domain/` is types and math with no React and no side effects, so the geometry is testable on its own, `services/` puts persistence behind a `NoteRepository` interface with two async implementations, integrating real api is just one more class implementation.
+
+dragging runs off one pointerdown/move/up handler on the board instead of listeners per note, a `Gesture` union in a ref tracks the current drag and pointerdown hit tests what you grabbed, resize handle first since it overlaps the note, then the body, then empty canvas, it lives in a ref because it changes on every pointermove and nothing renders off it `StickyNote` just renders and forwards events up
+
+`notesReducer` owns the list and the array order is the z order, so bring to front is a move to the end Writes are split in two: `patchNote` updates locally on every frame to keep dragging smooth, and the repository only gets written once the gesture ends A pending counter wraps every async call and feeds the loading indicator
+
+## Trade-offs
+
+Kept simple on purpose **given the time** box
+
+* No tests `domain/` and the reducer are pure and were written to be testable, first thing I'd add
+* `useBoard` does too much, pulling the data side into its own hook is the obvious next step
+* Notes can be dropped mostly off screen, nothing clamps them
+* Optimistic writes never roll back and there's no error UI
+* Text saves on blur, not per keystroke
+* Desktop only, no touch tuning
