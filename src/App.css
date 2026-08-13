@@ -9,3 +9,7 @@
   background-size: 26px 26px;
   background-position: -13px -13px;
 }
+
+.board {
+  touch-action: none;
+}
