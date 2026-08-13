@@ -17,7 +17,7 @@ export function resize(start: Rect, d: Point): Rect {
         x: start.x,
         y: start.y,
         w: Math.max(MIN_NOTE_SIZE, start.w + d.x),
-        h: Math.max(MIN_NOTE_SIZE, start.y + d.y)
+        h: Math.max(MIN_NOTE_SIZE, start.h + d.y)
     }
 }
 
