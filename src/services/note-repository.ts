@@ -1,9 +1,17 @@
 import type { Note } from "../domain/note";
 
+let idcounter = 3;
+
+function generateNewID() {
+    const newID = idcounter + 1
+    idcounter += 1
+    return newID
+}
+
 let _mockNotes = [
-    { id: 1, text: "Note 1", x: 10, y: 10, w: 150, h: 125 },
-    { id: 2, text: "Note 2", x: 50, y: 10, w: 150, h: 125 },
-    { id: 3, text: "Note 3", x: 300, y: 10, w: 150, h: 125 }
+    { id: generateNewID(), text: "Note 1", x: 10, y: 10, w: 150, h: 125 },
+    { id: generateNewID(), text: "Note 2", x: 50, y: 10, w: 150, h: 125 },
+    { id: generateNewID(), text: "Note 3", x: 300, y: 10, w: 150, h: 125 }
 ]
 
 export class MockNoteRepository {
@@ -14,10 +22,9 @@ export class MockNoteRepository {
         return _mockNotes;
     }
 
-
     async create(note: Partial<Note>) {
         await this._simulateDelay();
-        const id: number = 1
+        const id: number = generateNewID()
 
         const newNote = note as Note
         newNote.id =  id
