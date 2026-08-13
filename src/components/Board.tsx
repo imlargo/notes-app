@@ -71,11 +71,11 @@ export function Board() {
         if (g.kind === "create") {
             setDraft(rectFromPoints(g.origin, point))
         } else if (g.kind === "move") {
-            updateNote(g.id, { x: point.x - g.grab.x, y: point.y - g.grab.y })
+            patchNote(g.id, { x: point.x - g.grab.x, y: point.y - g.grab.y })
         } else if (g.kind === "resize") {
             const d: Point = { x: point.x - g.from.x, y: point.y - g.from.y }
             const rect = resize(g.start, d)
-            updateNote(g.id, { ...rect })
+            patchNote(g.id, { ...rect })
         }
     }
 
@@ -105,7 +105,12 @@ export function Board() {
 
     async function updateNote(id: number, note: Partial<Note>) {
         const updated = await noteService.updateNote(id, note)
-        setNotes((prev) => prev.map((n) => n.id === id ? updated : n))
+        patchNote(id, updated)
+        
+    }
+
+    function patchNote(id: number, changes: Partial<Note>) {
+        setNotes((prev) => prev.map((n) => n.id === id ? {...n, ...changes} : n))
     }
 
     return (
