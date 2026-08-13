@@ -22,14 +22,21 @@ const COLOR_CLASSES: Record<NoteColor, string> = {
     "lime": "bg-lime-200",
 }
 
-export const StickyNote = memo(({ note, className, fading, editing, onChange, onStopEditing }: StickyNoteProps) => {
+export const StickyNote = memo(({ note, className, fading, editing, onChange, onStopEditing, onMove, onResize, onDelete, onStartEditing }: StickyNoteProps) => {
+    const noteRef = useRef<HTMLDivElement>(null)
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+    useEffect(() => {
+        if (editing) textareaRef.current?.focus()
+    }, [editing])
+
     const style: CSSProperties = {
         transform: `translate(${note.x}px, ${note.y}px)`,
         width: note.w,
         height: note.h,
     }
 
-    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border overflow-hidden min-w-12 min-h-24 ${className} ${fading && "opacity-50"} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
+    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border overflow-hidden min-w-12 min-h-24 outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 ${className} ${fading && "opacity-50"} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
 
     const onTextChange = (text: string) => {
         onChange?.(note.id, {
@@ -37,6 +44,12 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         })
     }
 
+        ref={noteRef}
+        className={cls}
+        style={style}
+        data-note-id={note.id}
+        tabIndex={0}
+        role="group"
         aria-roledescription="sticky note"
         aria-label={note.text || "Empty note"}
         aria-describedby="board-instructions"
@@ -46,6 +59,7 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
 
         <div className="w-full  p-4">
             <textarea
+                ref={textareaRef}
                 className="text-neutral-600 w-full max-h-max outline-none bg-none"
                 aria-label="Note text"
 
@@ -58,6 +72,7 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
                 onKeyDown={(e) => {
                     if (e.key === "Escape") {
                         e.currentTarget.blur()
+                        noteRef.current?.focus()
                     }
                 }}
             >
