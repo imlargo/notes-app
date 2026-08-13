@@ -1,4 +1,5 @@
 import { randomColor, type Note } from "../domain/note";
+import type { NoteRepository } from "./repository";
 
 let idcounter = 3;
 
@@ -14,7 +15,7 @@ let _mockNotes = [
     { id: generateNewID(), text: "Note 3", x: 300, y: 10, w: 150, h: 125, color: randomColor() }
 ]
 
-export class MockNoteRepository {
+export class MockNoteRepository implements NoteRepository {
 
     async list(): Promise<Note[]> {
         await this._simulateDelay()

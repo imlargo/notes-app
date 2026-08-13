@@ -1,27 +1,27 @@
 import type { Note } from "../domain/note";
-import type { MockNoteRepository } from "./memory-note-repository";
+import type { NoteRepository } from "./repository";
 
 export class NoteService {
-    _repository: MockNoteRepository;
+    repository: NoteRepository;
 
-    constructor(repository: MockNoteRepository) {
-        this._repository = repository
+    constructor(repository: NoteRepository) {
+        this.repository = repository
     }
 
     async getNotes() {
-        return this._repository.list();
+        return this.repository.list();
     }
 
     async createNote(note: Partial<Note>): Promise<Note> {
-        const created = this._repository.create(note)
+        const created = this.repository.create(note)
         return created
     }
 
     async updateNote(id: number, data: Partial<Note>): Promise<Note> {
-        return this._repository.update(id, data)
+        return this.repository.update(id, data)
     }
 
     async deleteNote(id: number) {
-        return this._repository.delete(id)
+        return this.repository.delete(id)
     }
 }
