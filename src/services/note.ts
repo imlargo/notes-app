@@ -1,13 +1,13 @@
 import type { MockNoteRepository } from "./note-repository";
 
 export class NoteService {
-    repository: MockNoteRepository;
+    _repository: MockNoteRepository;
 
     constructor(repository: MockNoteRepository) {
-        this.repository = repository
+        this._repository = repository
     }
 
     async getNotes() {
-        return this.repository.list();
+        return this._repository.list();
     }
 }
