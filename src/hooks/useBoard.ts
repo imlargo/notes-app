@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { randomColor, type Note } from "../domain/note";
 import { NoteService } from "../services/note";
-import { MockNoteRepository } from "../services/note-repository";
+import { MockNoteRepository } from "../services/memory-note-repository";
 import { contains, rectFromPoints, resize, type Point, type Rect } from "../domain/geometry";
 import { notesReducer } from "../state/notesReducer";
 

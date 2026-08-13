@@ -1,5 +1,5 @@
 import type { Note } from "../domain/note";
-import type { MockNoteRepository } from "./note-repository";
+import type { MockNoteRepository } from "./memory-note-repository";
 
 export class NoteService {
     _repository: MockNoteRepository;
