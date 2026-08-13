@@ -15,11 +15,14 @@ export class MockNoteRepository {
     }
 
 
-    async create(note: Note) {
+    async create(note: Partial<Note>) {
         await this._simulateDelay();
+        const id: number = 1
 
-        _mockNotes.push(note)
-        return
+        const newNote = note as Note
+        newNote.id =  id
+        _mockNotes.push(newNote)
+        return newNote
     }
 
     async delete(noteId: number) {
