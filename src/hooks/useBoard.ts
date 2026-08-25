@@ -107,9 +107,9 @@ export function useBoard() {
     }, [])
 
 
-    // this actually persists it, patchNote above is just the optimistic update
-    const updateNote = useCallback(async (id: number, note: Partial<Note>) => {
-        const updated = await withPending(() => noteService.current.updateNote(id, note))
+    // persists only the changed fields
+    const updateNote = useCallback(async (id: number, changes: Partial<Note>) => {
+        const updated = await withPending(() => noteService.current.updateNote(id, changes))
         patchNote(id, updated)
     }, [patchNote, withPending])
 
@@ -119,7 +119,7 @@ export function useBoard() {
         if (active) {
             const next = { color: nextColor(active.color) }
             patchNote(active.id, next)
-            updateNote(active.id, { ...active, ...next })
+            updateNote(active.id, next)
         } else {
             setSelectedColor((c) => nextColor(c))
         }
@@ -130,7 +130,7 @@ export function useBoard() {
 
         const note = notes.find((n) => n.id === editingId)
         if (note) {
-            updateNote(note.id, note)
+            updateNote(note.id, { text: note.text })
         }
 
         setEditingId(null)
@@ -170,7 +170,7 @@ export function useBoard() {
         if (!note) return
         const next = { x: note.x + dx, y: note.y + dy }
         patchNote(id, next)
-        updateNote(id, { ...note, ...next })
+        updateNote(id, next)
     }, [notes, patchNote, updateNote])
 
     const resizeNoteBy = useCallback((id: number, dw: number, dh: number) => {
@@ -178,7 +178,7 @@ export function useBoard() {
         if (!note) return
         const next = resize(note, { x: dw, y: dh })
         patchNote(id, next)
-        updateNote(id, { ...note, ...next })
+        updateNote(id, next)
     }, [notes, patchNote, updateNote])
 
 
@@ -259,11 +259,14 @@ export function useBoard() {
                 deleteNote(g.id)
             } else {
                 const note = notes.find(n => n.id === g.id)
-                if (note) updateNote(note.id, note)
+                if (note) updateNote(note.id, { x: note.x, y: note.y })
             }
         } else {
             const note = notes.find(n => n.id === g.id)
-            if (note) updateNote(note.id, note)
+            if (note) {
+                const { x, y, w, h } = note
+                updateNote(note.id, { x, y, w, h })
+            }
         }
 
         gesture.current = null
