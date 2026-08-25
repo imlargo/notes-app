@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, type CSSProperties, type KeyboardEvent } from "react";
 import { COLOR_CLASSES, type Note } from "../domain/note"
-import { MoreHorizontal } from "lucide-react";
+import { GripHorizontal } from "lucide-react";
 
 interface StickyNoteProps {
     note: Note
@@ -8,6 +8,7 @@ interface StickyNoteProps {
 
     fading?: boolean;
     editing?: boolean;
+    active?: boolean;
     onChange?: (id: number, changes: Partial<Note>) => void
     onStopEditing?: () => void
     onMove?: (id: number, dx: number, dy: number) => void
@@ -15,12 +16,13 @@ interface StickyNoteProps {
     onDelete?: (id: number) => void
     onStartEditing?: (id: number) => void
     onActivate?: (id: number) => void
+    onDeactivate?: () => void
 }
 
 const STEP = 8
 const STEP_LARGE = 32
 
-export const StickyNote = memo(({ note, className, fading, editing, onChange, onStopEditing, onMove, onResize, onDelete, onStartEditing, onActivate }: StickyNoteProps) => {
+export const StickyNote = memo(({ note, className, fading, editing, active, onChange, onStopEditing, onMove, onResize, onDelete, onStartEditing, onActivate, onDeactivate }: StickyNoteProps) => {
     const noteRef = useRef<HTMLDivElement>(null)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -34,7 +36,7 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         height: note.h,
     }
 
-    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border overflow-hidden min-w-12 min-h-24 outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 ${className} ${fading && "opacity-50"} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
+    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border min-w-12 min-h-24 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-indigo-600 ${active ? "ring-2 ring-neutral-800" : ""} ${className} ${fading && "opacity-50"} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
 
     const onTextChange = (text: string) => {
         // asks for the height the text needs
@@ -44,7 +46,7 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
     }
 
     const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-        if ((e.target as HTMLElement).tagName === "TEXTAREA") return
+        if ((e.target as HTMLElement).closest("textarea, [data-no-drag]")) return
 
         if (e.key.startsWith("Arrow")) {
             e.preventDefault()
@@ -59,6 +61,8 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         } else if (e.key === "Enter" || e.key === "F2") {
             e.preventDefault()
             onStartEditing?.(note.id)
+        } else if (e.key === "Escape") {
+            onDeactivate?.()
         }
     }
 
@@ -72,11 +76,12 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         aria-roledescription="sticky note"
         aria-label={note.text || "Empty note"}
         aria-describedby="board-instructions"
+        aria-current={active ? "true" : undefined}
         onKeyDown={onKeyDown}
         onFocus={() => onActivate?.(note.id)}
     >
-        <div className="flex items-center w-full border-b py-2  p-4 shrink-0">
-            <MoreHorizontal className="size-4 text-neutral-400" aria-hidden="true"></MoreHorizontal>
+        <div className="flex items-center justify-center border-b px-3 py-2 shrink-0">
+            <GripHorizontal className="size-4 text-neutral-400" aria-hidden="true" />
         </div>
 
         <div className="flex-1 min-h-0 w-full  p-4">

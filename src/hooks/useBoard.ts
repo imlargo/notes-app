@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { randomColor, nextColor, type Note, type NoteColor } from "../domain/note";
+import { randomColor, type Note, type NoteColor } from "../domain/note";
 import { NoteService } from "../services/note";
 import { MockNoteRepository } from "../services/memory-note-repository";
 import { LocalStorageRepository } from "../services/local-note-repository";
@@ -91,12 +91,10 @@ export function useBoard() {
         load()
     }, [load])
 
+    const clearActive = useCallback(() => setActiveNoteId(null), [])
+
     const startEditing = useCallback((id: number) => {
         setEditingId(id)
-    }, [])
-
-    const activateNote = useCallback((id: number) => {
-        setActiveNoteId(id)
     }, [])
 
     const onDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -126,16 +124,13 @@ export function useBoard() {
         }
     }, [patchNote, withPending])
 
-    // if a note is active it changes the color, otherwise changes the color of the next new note
-    const cycleColor = useCallback(() => {
-        const active = activeNoteId !== null ? notes.find(n => n.id === activeNoteId) : undefined
-        if (active) {
-            const next = { color: nextColor(active.color) }
-            updateNote(active.id, next, { color: active.color })
-        } else {
-            setSelectedColor((c) => nextColor(c))
-        }
-    }, [activeNoteId, notes, updateNote])
+    const activeNote = activeNoteId !== null ? notes.find((n) => n.id === activeNoteId) : undefined
+
+    // one control, and the selection ring is what tells you which of the two it is about
+    const selectColor = useCallback((color: NoteColor) => {
+        if (!activeNote) return setSelectedColor(color)
+        updateNote(activeNote.id, { color }, { color: activeNote.color })
+    }, [activeNote, updateNote])
 
     // grows the note to fit the text
     const editNote = useCallback((id: number, changes: Partial<Note>) => {
@@ -218,7 +213,7 @@ export function useBoard() {
         const target = e.target as HTMLElement
 
         // anything interactive keeps its own behaviour instead of starting a drag
-        if (target.closest("textarea, button, a, select")) return
+        if (target.closest("textarea, button, a, select, [data-no-drag]")) return
 
         const r = e.currentTarget.getBoundingClientRect();
         boardOrigin.current = { x: r.left, y: r.top }
@@ -249,7 +244,7 @@ export function useBoard() {
                 start: toRect(note),
             }
         } else {
-            // clicking the background clears the selection
+            // clicking the background deselects, so the toolbar goes back to targeting new notes
             setActiveNoteId(null)
             gesture.current = { kind: "create", origin: point }
         }
@@ -319,9 +314,6 @@ export function useBoard() {
     // reading the ref directly is fine, patchNote already rerenders on every move
     const draggingId = gesture.current?.kind === "move" ? gesture.current.id : null
 
-    const activeNote = activeNoteId !== null ? notes.find(n => n.id === activeNoteId) : undefined
-    const toolbarColor = activeNote?.color ?? selectedColor
-
     return {
         notes,
         onPointerDown,
@@ -341,12 +333,14 @@ export function useBoard() {
         resizeNoteBy,
         deleteNote,
         startEditing,
-        activateNote,
         announcement,
         isLoading: pendingCount > 0,
         storageType,
         changeStorage,
-        toolbarColor,
-        cycleColor,
+        activeNoteId,
+        activateNote: setActiveNoteId,
+        deactivateNote: clearActive,
+        toolbarColor: activeNote?.color ?? selectedColor,
+        selectColor,
     }
 }

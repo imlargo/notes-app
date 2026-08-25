@@ -24,13 +24,15 @@ export function Board() {
         resizeNoteBy,
         deleteNote,
         startEditing,
-        activateNote,
         announcement,
         isLoading,
         storageType,
         changeStorage,
+        activeNoteId,
+        activateNote,
+        deactivateNote,
         toolbarColor,
-        cycleColor,
+        selectColor,
     } = useBoard();
 
     const addButtonRef = useRef<HTMLButtonElement>(null)
@@ -49,7 +51,7 @@ export function Board() {
             onDoubleClick={onDoubleClick}
         >
             <p id="board-instructions" className="sr-only">
-                Arrow keys move the focused note, hold shift to move further, hold alt to resize instead, enter opens it for editing, delete removes it.
+                Arrow keys move the focused note, hold shift to move further, hold alt to resize instead, enter opens it for editing, delete removes it, escape deselects it.
             </p>
 
             <div aria-live="polite" className="sr-only">{announcement}</div>
@@ -81,7 +83,9 @@ export function Board() {
                     onResize={resizeNoteBy}
                     onDelete={handleDelete}
                     onStartEditing={startEditing}
+                    active={activeNoteId === note.id}
                     onActivate={activateNote}
+                    onDeactivate={deactivateNote}
 
                     key={note.id} note={note} ></StickyNote>
             ))}
@@ -110,7 +114,13 @@ export function Board() {
                     <span>imlargo.dev</span>
                 </a>
 
-                <Toolbar ref={addButtonRef} onAddNote={addNote} color={toolbarColor} onCycleColor={cycleColor} />
+                <Toolbar
+                    ref={addButtonRef}
+                    onAddNote={addNote}
+                    color={toolbarColor}
+                    colorLabel={activeNoteId !== null ? "Color of the selected note" : "Color for new notes"}
+                    onSelectColor={selectColor}
+                />
 
                 {/* no pointer events, useBoard just reads its position through trashRef */}
                 <div aria-hidden="true" className="trash aspect-square p-4 border border-red-800 bg-red-600/30 rounded-xl flex items-center justify-center pointer-events-none" ref={trashRef}>
