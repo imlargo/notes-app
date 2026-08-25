@@ -199,6 +199,7 @@ export function useBoard() {
 
         if (note) {
             bringToFront(note.id)
+            setActiveNoteId(note.id)
         }
 
         if (note && isResize) {
