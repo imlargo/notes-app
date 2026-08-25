@@ -215,6 +215,8 @@ export function useBoard() {
                 grab: { x: point.x - note.x, y: point.y - note.y }
             }
         } else {
+            // clicking the background clears the selection
+            setActiveNoteId(null)
             gesture.current = { kind: "create", origin: point }
         }
 
