@@ -1,0 +1,7 @@
+## Architecture descripcion
+
+The app is layered so the logic and the persistence don't depend on React. domain/ is the model and the geometry, pure functions I can test without mounting anything. services/ hides persistence behind an async NoteRepository with two implementations, in-memory and localStorage. Both have fake latency on purpose so the UI is written against real async I/O. A REST backend would be one more class and nothing above it changes. state/ is a reducer and components/ only render.
+
+The main decision on the interaction side was to drag with one set of pointer handlers on the board instead of wiring listeners per note. Hit testing happens on pointerdown and the current gesture is a union kept in a ref since it changes every frame and nothing renders from it. The repository only gets written when the gesture ends. That keeps dragging at frame rate and keeps the async layer out of the hot path
+
+Accessibility wasn't an afterthought, it shaped the component API. A drag only interface is invisible to a keyboard so every note is focusable and can be moved, resized, edited and deleted without a mouse. Focus goes somewhere sensible after a note disappears and changes get announced. Types work the same way, the gesture is a union instead of a pile of flags so the wrong state doesn't compile. That part matters more to me than squeezing in every feature
