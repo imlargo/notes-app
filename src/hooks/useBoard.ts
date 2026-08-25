@@ -297,7 +297,17 @@ export function useBoard() {
 
         gesture.current = null
         setDraft(null)
+        setOverTrash(false)
     }, [notes, createNote, deleteNote, updateNote, toLocal, trashRect])
+
+    const cancelGesture = useCallback(() => {
+        const g = gesture.current
+        if (!g) return
+        if (g.kind !== "create") patchNote(g.id, g.start)
+        gesture.current = null
+        setDraft(null)
+        setOverTrash(false)
+    }, [patchNote])
 
 
     useEffect(() => {
@@ -319,6 +329,7 @@ export function useBoard() {
         onPointerDown,
         onPointerMove,
         onPointerUp,
+        cancelGesture,
         onDoubleClick,
         editingId,
         overTrash,

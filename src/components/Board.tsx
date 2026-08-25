@@ -10,6 +10,7 @@ export function Board() {
         onPointerDown,
         onPointerMove,
         onPointerUp,
+        cancelGesture,
         onDoubleClick,
         editingId,
         overTrash,
@@ -48,6 +49,8 @@ export function Board() {
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
+            onPointerCancel={cancelGesture}
+            onLostPointerCapture={cancelGesture}
             onDoubleClick={onDoubleClick}
         >
             <p id="board-instructions" className="sr-only">
