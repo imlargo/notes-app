@@ -4,6 +4,7 @@ import { Toolbar } from "./Toolbar";
 import { useBoard } from "../hooks/useBoard";
 import { StorageSelector } from "./StorageSelector";
 import { SyncIndicator } from "./SyncIndicator";
+import { ErrorToast } from "./ErrorToast";
 import { DraftRect } from "./DraftRect";
 import { ScreenReaderStatus } from "./ScreenReaderStatus";
 import { AuthorLink } from "./AuthorLink";
@@ -31,6 +32,7 @@ export function Board() {
         deleteNote,
         startEditing,
         announcement,
+        error,
         isLoading,
         storageType,
         changeStorage,
@@ -62,7 +64,7 @@ export function Board() {
 
             <StorageSelector value={storageType} onChange={changeStorage} />
 
-            {isLoading && <SyncIndicator />}
+            {error ? <ErrorToast message={error} /> : isLoading && <SyncIndicator />}
 
             {notes.map((note) => (
                 <StickyNote

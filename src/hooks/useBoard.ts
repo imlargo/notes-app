@@ -10,7 +10,7 @@ const NEW_NOTE = { w: 160, h: 130 }
 export function useBoard() {
     const {
         notes, getNote, bringToFront, patchNote, updateNote, createNote, removeNote,
-        announcement, isLoading, storageType, changeStorage,
+        announcement, error, isLoading, storageType, changeStorage,
     } = useNotes()
 
     const { boardRef, boardSize } = useBoardBounds()
@@ -127,6 +127,7 @@ export function useBoard() {
         deleteNote,
         startEditing,
         announcement,
+        error,
         isLoading,
         storageType,
         changeStorage,

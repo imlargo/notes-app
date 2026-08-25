@@ -4,12 +4,16 @@ import { NoteService } from "../services/note";
 import { createRepository, type StorageType } from "../services/create-repository";
 import { notesReducer } from "../state/notesReducer";
 
+const ERROR_TIMEOUT = 4000
+
 export function useNotes() {
     const [notes, dispatch] = useReducer(notesReducer, [])
     const notesRef = useRef(notes)
     useEffect(() => { notesRef.current = notes }, [notes])
 
     const [announcement, setAnnouncement] = useState("")
+    const [error, setError] = useState<string | null>(null)
+    const errorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
     const [pendingCount, setPendingCount] = useState(0)
     const [storageType, setStorageType] = useState<StorageType>("memory")
 
@@ -20,6 +24,12 @@ export function useNotes() {
 
     // ref keeps re-renders stable
     const getNote = useCallback((id: number) => notesRef.current.find((n) => n.id === id), [])
+
+    const fail = useCallback((message: string) => {
+        setError(message)
+        clearTimeout(errorTimer.current)
+        errorTimer.current = setTimeout(() => setError(null), ERROR_TIMEOUT)
+    }, [])
 
     const withPending = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
         setPendingCount(c => c + 1)
@@ -33,8 +43,8 @@ export function useNotes() {
     const load = useCallback(() => {
         withPending(() => noteService.current.getNotes())
             .then((data) => dispatch({ type: "load", notes: data }))
-            .catch(() => setAnnouncement("Could not load the notes"))
-    }, [withPending])
+            .catch(() => fail("Could not load the notes"))
+    }, [withPending, fail])
 
     const changeStorage = useCallback((type: StorageType) => {
         setStorageType(type)
@@ -58,9 +68,9 @@ export function useNotes() {
             await withPending(() => noteService.current.updateNote(id, changes))
         } catch {
             if (rollback) patchNote(id, rollback)
-            setAnnouncement("Could not save the note")
+            fail("Could not save the note")
         }
-    }, [patchNote, withPending])
+    }, [patchNote, withPending, fail])
 
     // optimistic
     const createNote = useCallback(async (draft: Omit<Note, "id">): Promise<Note | null> => {
@@ -75,10 +85,10 @@ export function useNotes() {
             return created
         } catch {
             dispatch({ type: "remove", id: tempId })
-            setAnnouncement("Could not create the note")
+            fail("Could not create the note")
             return null
         }
-    }, [withPending])
+    }, [withPending, fail])
 
     const removeNote = useCallback(async (id: number) => {
         const deleted = getNote(id)
@@ -91,9 +101,9 @@ export function useNotes() {
             await withPending(() => noteService.current.deleteNote(id))
         } catch {
             dispatch({ type: "add", note: deleted })
-            setAnnouncement("Could not delete the note")
+            fail("Could not delete the note")
         }
-    }, [getNote, withPending])
+    }, [getNote, withPending, fail])
 
     useEffect(() => {
         load()
@@ -108,6 +118,7 @@ export function useNotes() {
         createNote,
         removeNote,
         announcement,
+        error,
         isLoading: pendingCount > 0,
         storageType,
         changeStorage,
