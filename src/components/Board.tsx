@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import { StickyNote } from "./StickyNote";
 import { Toolbar } from "./Toolbar";
 import { useBoard } from "../hooks/useBoard";
@@ -43,10 +43,10 @@ export function Board() {
 
     const addButtonRef = useRef<HTMLButtonElement>(null)
 
-    const handleDelete = (id: number) => {
+    const handleDelete = useCallback((id: number) => {
         deleteNote(id)
         addButtonRef.current?.focus()
-    }
+    }, [deleteNote])
 
     return (
         <div className="board canvas-grid w-full h-full relative select-none"

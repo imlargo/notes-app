@@ -14,6 +14,8 @@ type Gesture =
 
 export function useBoard() {
     const [notes, dispatch] = useReducer(notesReducer, [])
+    const notesRef = useRef(notes)
+    useEffect(() => { notesRef.current = notes }, [notes])
     const [draft, setDraft] = useState<Rect | null>(null)
     const [editingId, setEditingId] = useState<number | null>(null)
     const [overTrash, setOverTrash] = useState<boolean>(false)
@@ -34,6 +36,10 @@ export function useBoard() {
     const lastTempId = useRef(0)
 
     const noteService = useRef(new NoteService(createRepository("memory")))
+
+    // notes changes on every pointermove, so anything that reads it through the closure gets a new
+    // identity per frame and re-renders every note. Going through the ref keeps these stable
+    const getNote = useCallback((id: number) => notesRef.current.find((n) => n.id === id), [])
 
     const withPending = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
         setPendingCount(c => c + 1)
@@ -126,22 +132,22 @@ export function useBoard() {
 
     // grows the note to fit the text
     const editNote = useCallback((id: number, changes: Partial<Note>) => {
-        const note = notes.find((n) => n.id === id)
+        const note = getNote(id)
         if (!note) return
         const { h } = clampSize({ ...note, ...changes }, boardSize())
         patchNote(id, { ...changes, h })
-    }, [notes, boardSize, patchNote])
+    }, [getNote, boardSize, patchNote])
 
     const stopEditing = useCallback(() => {
         if (editingId === null) return
 
-        const note = notes.find((n) => n.id === editingId)
+        const note = getNote(editingId)
         if (note) {
             updateNote(note.id, { text: note.text, h: note.h })
         }
 
         setEditingId(null)
-    }, [editingId, notes, updateNote])
+    }, [editingId, getNote, updateNote])
 
     // optimistic
     const createNote = useCallback(async (rect: Rect): Promise<Note | null> => {
@@ -164,13 +170,13 @@ export function useBoard() {
 
     // keyboard-only way to create a note, since drag-to-create has no keyboard equivalent
     const addNote = useCallback(async () => {
-        const offset = (notes.length % 6) * 24
+        const offset = (notesRef.current.length % 6) * 24
         const created = await createNote({ x: 40 + offset, y: 40 + offset, w: 160, h: 130 })
         if (created) setPendingFocusId(created.id)
-    }, [notes.length, createNote])
+    }, [createNote])
 
     const deleteNote = useCallback(async (id: number) => {
-        const deleted = notes.find(n => n.id === id)
+        const deleted = getNote(id)
         if (!deleted) return
 
         dispatch({ type: "remove", id })
@@ -184,21 +190,21 @@ export function useBoard() {
             dispatch({ type: "add", note: deleted })
             setAnnouncement("Could not delete the note")
         }
-    }, [notes, withPending])
+    }, [getNote, withPending])
 
     const moveNoteBy = useCallback((id: number, dx: number, dy: number) => {
-        const note = notes.find(n => n.id === id)
+        const note = getNote(id)
         if (!note) return
         const moved = clampPosition({ ...note, x: note.x + dx, y: note.y + dy }, boardSize())
         updateNote(id, position(moved), position(note))
-    }, [notes, boardSize, updateNote])
+    }, [getNote, boardSize, updateNote])
 
     const resizeNoteBy = useCallback((id: number, dw: number, dh: number) => {
-        const note = notes.find(n => n.id === id)
+        const note = getNote(id)
         if (!note) return
         const next = clampSize(resize(note, { x: dw, y: dh }), boardSize())
         updateNote(id, next, toRect(note))
-    }, [notes, boardSize, updateNote])
+    }, [getNote, boardSize, updateNote])
 
 
     const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -214,7 +220,7 @@ export function useBoard() {
         // resize handle overlaps the note so it has to win the hit test first
         const isResize = target.closest("[data-resize-handle]") !== null
         const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
-        const note = noteEl ? notes.find((n) => n.id === parseInt(noteEl.dataset.noteId || "0")) : undefined
+        const note = noteEl ? getNote(parseInt(noteEl.dataset.noteId || "0")) : undefined
 
         if (note) {
             bringToFront(note.id)
@@ -243,7 +249,7 @@ export function useBoard() {
 
         // so we keep getting move/up events even if the cursor leaves the board
         e.currentTarget.setPointerCapture(e.pointerId)
-    }, [notes, bringToFront, toLocal])
+    }, [getNote, bringToFront, toLocal])
 
     const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
@@ -279,18 +285,18 @@ export function useBoard() {
             if (trash && contains(trash, point)) {
                 deleteNote(g.id)
             } else {
-                const note = notes.find(n => n.id === g.id)
+                const note = getNote(g.id)
                 if (note) updateNote(note.id, position(note), g.start)
             }
         } else {
-            const note = notes.find(n => n.id === g.id)
+            const note = getNote(g.id)
             if (note) updateNote(note.id, toRect(note), g.start)
         }
 
         gesture.current = null
         setDraft(null)
         setOverTrash(false)
-    }, [notes, createNote, deleteNote, updateNote, toLocal, trashRect])
+    }, [getNote, createNote, deleteNote, updateNote, toLocal, trashRect])
 
     const cancelGesture = useCallback(() => {
         const g = gesture.current
