@@ -170,16 +170,21 @@ export function useBoard() {
     }, [notes.length, createNote])
 
     const deleteNote = useCallback(async (id: number) => {
-        await withPending(() => noteService.current.deleteNote(id))
-        dispatch({
-            type: "remove",
-            id
-        })
+        const deleted = notes.find(n => n.id === id)
+        if (!deleted) return
 
+        dispatch({ type: "remove", id })
         setEditingId((curr) => curr === id ? null : curr)
         setActiveNoteId((curr) => curr === id ? null : curr)
         setAnnouncement("Note deleted")
-    }, [withPending])
+
+        try {
+            await withPending(() => noteService.current.deleteNote(id))
+        } catch {
+            dispatch({ type: "add", note: deleted })
+            setAnnouncement("Could not delete the note")
+        }
+    }, [notes, withPending])
 
     const moveNoteBy = useCallback((id: number, dx: number, dy: number) => {
         const note = notes.find(n => n.id === id)
