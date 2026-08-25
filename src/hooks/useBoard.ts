@@ -10,7 +10,7 @@ import { notesReducer } from "../state/notesReducer";
 // ref not state, this updates on every pointermove
 type Gesture =
     | { kind: "create", origin: Point }
-    | { kind: "move", id: number, grab: Point }
+    | { kind: "move", id: number, grab: Point, start: Point }
     | { kind: "resize", id: number, start: Rect, from: Point }
 
 export type StorageType = "memory" | "local"
@@ -111,9 +111,14 @@ export function useBoard() {
 
 
     // only patch changed fields
-    const updateNote = useCallback(async (id: number, changes: Partial<Note>) => {
+    const updateNote = useCallback(async (id: number, changes: Partial<Note>, rollback?: Partial<Note>) => {
         patchNote(id, changes)
-        await withPending(() => noteService.current.updateNote(id, changes))
+        try {
+            await withPending(() => noteService.current.updateNote(id, changes))
+        } catch {
+            if (rollback) patchNote(id, rollback)
+            setAnnouncement("Could not save the note")
+        }
     }, [patchNote, withPending])
 
     // if a note is active it changes the color, otherwise changes the color of the next new note
@@ -121,7 +126,7 @@ export function useBoard() {
         const active = activeNoteId !== null ? notes.find(n => n.id === activeNoteId) : undefined
         if (active) {
             const next = { color: nextColor(active.color) }
-            updateNote(active.id, next)
+            updateNote(active.id, next, { color: active.color })
         } else {
             setSelectedColor((c) => nextColor(c))
         }
@@ -180,14 +185,14 @@ export function useBoard() {
         const note = notes.find(n => n.id === id)
         if (!note) return
         const next = { x: note.x + dx, y: note.y + dy }
-        updateNote(id, next)
+        updateNote(id, next, { x: note.x, y: note.y })
     }, [notes, updateNote])
 
     const resizeNoteBy = useCallback((id: number, dw: number, dh: number) => {
         const note = notes.find(n => n.id === id)
         if (!note) return
         const next = resize(note, { x: dw, y: dh })
-        updateNote(id, next)
+        updateNote(id, next, { x: note.x, y: note.y, w: note.w, h: note.h })
     }, [notes, updateNote])
 
 
@@ -222,7 +227,8 @@ export function useBoard() {
             gesture.current = {
                 kind: "move",
                 id: note.id,
-                grab: { x: point.x - note.x, y: point.y - note.y }
+                grab: { x: point.x - note.x, y: point.y - note.y },
+                start: { x: note.x, y: note.y },
             }
         } else {
             // clicking the background clears the selection
@@ -268,13 +274,13 @@ export function useBoard() {
                 deleteNote(g.id)
             } else {
                 const note = notes.find(n => n.id === g.id)
-                if (note) updateNote(note.id, { x: note.x, y: note.y })
+                if (note) updateNote(note.id, { x: note.x, y: note.y }, g.start)
             }
         } else {
             const note = notes.find(n => n.id === g.id)
             if (note) {
                 const { x, y, w, h } = note
-                updateNote(note.id, { x, y, w, h })
+                updateNote(note.id, { x, y, w, h }, g.start)
             }
         }
 
