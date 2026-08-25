@@ -1,4 +1,4 @@
-import type { StorageType } from "../hooks/useBoard"
+import type { StorageType } from "../services/create-repository"
 
 interface StorageSelectorProps {
     value: StorageType

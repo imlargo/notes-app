@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { randomColor, type Note, type NoteColor } from "../domain/note";
 import { NoteService } from "../services/note";
-import { MockNoteRepository } from "../services/memory-note-repository";
-import { LocalStorageRepository } from "../services/local-note-repository";
-import type { NoteRepository } from "../services/repository";
+import { createRepository, type StorageType } from "../services/create-repository";
 import { clampPoint, clampPosition, clampSize, contains, position, rectFromPoints, resize, subtract, toRect, type Point, type Rect, type Size } from "../domain/geometry";
 import { notesReducer } from "../state/notesReducer";
 
@@ -12,12 +10,6 @@ type Gesture =
     | { kind: "create", origin: Point }
     | { kind: "move", id: number, grab: Point, start: Rect }
     | { kind: "resize", id: number, start: Rect, from: Point }
-
-export type StorageType = "memory" | "local"
-
-function createRepository(type: StorageType): NoteRepository {
-    return type === "local" ? new LocalStorageRepository() : new MockNoteRepository()
-}
 
 
 export function useBoard() {
