@@ -4,7 +4,7 @@ import { NoteService } from "../services/note";
 import { MockNoteRepository } from "../services/memory-note-repository";
 import { LocalStorageRepository } from "../services/local-note-repository";
 import type { NoteRepository } from "../services/repository";
-import { clampPoint, clampPosition, clampSize, contains, rectFromPoints, resize, type Point, type Rect, type Size } from "../domain/geometry";
+import { clampPoint, clampPosition, clampSize, contains, position, rectFromPoints, resize, subtract, toRect, type Point, type Rect, type Size } from "../domain/geometry";
 import { notesReducer } from "../state/notesReducer";
 
 // ref not state, this updates on every pointermove
@@ -52,10 +52,8 @@ export function useBoard() {
         }
     }, [])
 
-    const toLocal = useCallback((e: React.PointerEvent): Point => ({
-        x: e.clientX - boardOrigin.current.x,
-        y: e.clientY - boardOrigin.current.y,
-    }), [])
+    const toLocal = useCallback((e: React.PointerEvent): Point =>
+        subtract({ x: e.clientX, y: e.clientY }, boardOrigin.current), [])
 
     const boardSize = useCallback((): Size => {
         const r = boardRef.current?.getBoundingClientRect()
@@ -66,8 +64,7 @@ export function useBoard() {
         const trash = trashRef.current?.getBoundingClientRect()
         if (!trash) return null
         return {
-            x: trash.left - boardOrigin.current.x,
-            y: trash.top - boardOrigin.current.y,
+            ...subtract({ x: trash.left, y: trash.top }, boardOrigin.current),
             w: trash.width,
             h: trash.height
         }
@@ -206,14 +203,14 @@ export function useBoard() {
         const note = notes.find(n => n.id === id)
         if (!note) return
         const moved = clampPosition({ ...note, x: note.x + dx, y: note.y + dy }, boardSize())
-        updateNote(id, { x: moved.x, y: moved.y }, { x: note.x, y: note.y })
+        updateNote(id, position(moved), position(note))
     }, [notes, boardSize, updateNote])
 
     const resizeNoteBy = useCallback((id: number, dw: number, dh: number) => {
         const note = notes.find(n => n.id === id)
         if (!note) return
         const next = clampSize(resize(note, { x: dw, y: dh }), boardSize())
-        updateNote(id, next, { x: note.x, y: note.y, w: note.w, h: note.h })
+        updateNote(id, next, toRect(note))
     }, [notes, boardSize, updateNote])
 
 
@@ -241,15 +238,15 @@ export function useBoard() {
             gesture.current = {
                 kind: "resize",
                 id: note.id,
-                start: { x: note.x, y: note.y, w: note.w, h: note.h },
+                start: toRect(note),
                 from: point,
             }
         } else if (note) {
             gesture.current = {
                 kind: "move",
                 id: note.id,
-                grab: { x: point.x - note.x, y: point.y - note.y },
-                start: { x: note.x, y: note.y, w: note.w, h: note.h },
+                grab: subtract(point, position(note)),
+                start: toRect(note),
             }
         } else {
             // clicking the background clears the selection
@@ -271,13 +268,12 @@ export function useBoard() {
         if (g.kind === "create") {
             setDraft(rectFromPoints(g.origin, clampPoint(point, bounds)))
         } else if (g.kind === "move") {
-            const moved = clampPosition({ ...g.start, x: point.x - g.grab.x, y: point.y - g.grab.y }, bounds)
-            patchNote(g.id, { x: moved.x, y: moved.y })
+            const moved = clampPosition({ ...g.start, ...subtract(point, g.grab) }, bounds)
+            patchNote(g.id, position(moved))
             const trash = trashRect()
             setOverTrash(trash !== null && contains(trash, point))
         } else if (g.kind === "resize") {
-            const d: Point = { x: point.x - g.from.x, y: point.y - g.from.y }
-            patchNote(g.id, clampSize(resize(g.start, d), bounds))
+            patchNote(g.id, clampSize(resize(g.start, subtract(point, g.from)), bounds))
         }
     }, [patchNote, boardSize, toLocal, trashRect])
 
@@ -297,14 +293,11 @@ export function useBoard() {
                 deleteNote(g.id)
             } else {
                 const note = notes.find(n => n.id === g.id)
-                if (note) updateNote(note.id, { x: note.x, y: note.y }, g.start)
+                if (note) updateNote(note.id, position(note), g.start)
             }
         } else {
             const note = notes.find(n => n.id === g.id)
-            if (note) {
-                const { x, y, w, h } = note
-                updateNote(note.id, { x, y, w, h }, g.start)
-            }
+            if (note) updateNote(note.id, toRect(note), g.start)
         }
 
         gesture.current = null

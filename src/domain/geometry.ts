@@ -4,6 +4,20 @@ export type Point = { x: number, y: number }
 export type Rect = { x: number, y: number, w: number, h: number }
 export type Size = { w: number, h: number }
 
+export function subtract(a: Point, b: Point): Point {
+    return { x: a.x - b.x, y: a.y - b.y }
+}
+
+// the fields a move owns
+export function position(r: Rect): Point {
+    return { x: r.x, y: r.y }
+}
+
+// the fields a resize owns
+export function toRect(r: Rect): Rect {
+    return { x: r.x, y: r.y, w: r.w, h: r.h }
+}
+
 export function rectFromPoints(a: Point, b: Point): Rect {
     return {
         x: Math.min(a.x, b.x),
