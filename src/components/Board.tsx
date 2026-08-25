@@ -57,7 +57,6 @@ export function Board() {
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={cancelGesture}
-            onLostPointerCapture={cancelGesture}
             onDoubleClick={onDoubleClick}
         >
             <ScreenReaderStatus announcement={announcement} />
