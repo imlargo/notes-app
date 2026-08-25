@@ -1,10 +1,11 @@
 import { useRef } from "react";
 import { StickyNote } from "./StickyNote";
 import { Toolbar } from "./Toolbar";
-import { Trash } from "lucide-react";
 import { useBoard } from "../hooks/useBoard";
 import { StorageSelector } from "./StorageSelector";
 import { SyncIndicator } from "./SyncIndicator";
+import { DraftRect } from "./DraftRect";
+import { TrashZone } from "./TrashZone";
 
 export function Board() {
     const {
@@ -83,17 +84,7 @@ export function Board() {
             ))}
 
 
-            {draft && (<div
-                style={{
-                    transform: `translate(${draft.x}px, ${draft.y}px)`,
-                    width: draft.w,
-                    height: draft.h,
-                }}
-                className={`cursor-grab flex flex-col absolute top-0 left-0 border overflow-hidden border-dashed bg-neutral-50 opacity-80 pointer-events-none`}
-            >
-
-
-            </div>)}
+            {draft && <DraftRect rect={draft} />}
 
             <div className="flex items-center justify-between fixed bottom-6 inset-x-0 pointer-events-none px-4">
                 <a
@@ -114,10 +105,7 @@ export function Board() {
                     onSelectColor={selectColor}
                 />
 
-                {/* no pointer events, useBoard just reads its position through trashRef */}
-                <div aria-hidden="true" className="trash aspect-square p-4 border border-red-800 bg-red-600/30 rounded-xl flex items-center justify-center pointer-events-none" ref={trashRef}>
-                    <Trash className="size-5 text-red-800"></Trash>
-                </div>
+                <TrashZone ref={trashRef} />
             </div>
         </div>
     )
