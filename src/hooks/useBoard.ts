@@ -113,7 +113,7 @@ export function useBoard() {
         patchNote(id, updated)
     }, [patchNote, withPending])
 
-    // if a note is active (last one focused), cycle its color instead of the default for new notes
+    // if a note is active it changes the color, otherwise changes the color of the next new note
     const cycleColor = useCallback(() => {
         const active = activeNoteId !== null ? notes.find(n => n.id === activeNoteId) : undefined
         if (active) {
