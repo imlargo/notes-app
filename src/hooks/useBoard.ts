@@ -109,9 +109,8 @@ export function useBoard() {
 
     // persists only the changed fields
     const updateNote = useCallback(async (id: number, changes: Partial<Note>) => {
-        const updated = await withPending(() => noteService.current.updateNote(id, changes))
-        patchNote(id, updated)
-    }, [patchNote, withPending])
+        await withPending(() => noteService.current.updateNote(id, changes))
+    }, [withPending])
 
     // if a note is active it changes the color, otherwise changes the color of the next new note
     const cycleColor = useCallback(() => {
