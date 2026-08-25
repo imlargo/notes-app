@@ -76,7 +76,9 @@ export function useBoard() {
 
 
     const load = useCallback(() => {
-        withPending(() => noteService.current.getNotes()).then((data) => dispatch({ type: "load", notes: data }))
+        withPending(() => noteService.current.getNotes())
+            .then((data) => dispatch({ type: "load", notes: data }))
+            .catch(() => setAnnouncement("Could not load the notes"))
     }, [withPending])
 
     // swaps the backend and reloads from it, super simple, no migration between the two
