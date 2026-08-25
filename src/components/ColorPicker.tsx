@@ -6,11 +6,10 @@ interface ColorPickerProps {
     value: NoteColor
     label: string
     placement?: "top" | "bottom"
-    compact?: boolean
     onChange: (color: NoteColor) => void
 }
 
-export function ColorPicker({ value, label, placement = "bottom", compact, onChange }: ColorPickerProps) {
+export function ColorPicker({ value, label, placement = "bottom", onChange }: ColorPickerProps) {
     const [open, setOpen] = useState(false)
     const root = useRef<HTMLDivElement>(null)
     const name = useId()
@@ -34,9 +33,9 @@ export function ColorPicker({ value, label, placement = "bottom", compact, onCha
             aria-haspopup="true"
             aria-expanded={open}
             aria-label={`${label}: ${value}`}
-            className={`rounded-full ring-1 ring-black/20 flex items-center justify-center ${compact ? "size-5" : "size-7"} ${COLOR_CLASSES[value]}`}
+            className={`rounded-full ring-1 ring-black/20 flex items-center justify-center size-7 ${COLOR_CLASSES[value]}`}
         >
-            <Palette className={compact ? "size-3" : "size-4"} aria-hidden="true" />
+            <Palette className="size-4" aria-hidden="true" />
         </button>
 
         {open && (
