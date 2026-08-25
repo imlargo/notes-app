@@ -37,9 +37,10 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
     const cls = `cursor-grab flex flex-col absolute top-0 left-0 border overflow-hidden min-w-12 min-h-24 outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 ${className} ${fading && "opacity-50"} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
 
     const onTextChange = (text: string) => {
-        onChange?.(note.id, {
-            text: text
-        })
+        // asks for the height the text needs
+        const el = textareaRef.current
+        const overflow = el ? el.scrollHeight - el.clientHeight : 0
+        onChange?.(note.id, { text, h: note.h + overflow })
     }
 
     const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -74,14 +75,14 @@ export const StickyNote = memo(({ note, className, fading, editing, onChange, on
         onKeyDown={onKeyDown}
         onFocus={() => onActivate?.(note.id)}
     >
-        <div className="flex items-center w-full border-b py-2  p-4">
+        <div className="flex items-center w-full border-b py-2  p-4 shrink-0">
             <MoreHorizontal className="size-4 text-neutral-400" aria-hidden="true"></MoreHorizontal>
         </div>
 
-        <div className="w-full  p-4">
+        <div className="flex-1 min-h-0 w-full  p-4">
             <textarea
                 ref={textareaRef}
-                className="text-neutral-600 w-full max-h-max outline-none bg-none"
+                className="text-neutral-600 w-full h-full resize-none outline-none bg-none"
                 aria-label="Note text"
 
                 value={note.text}

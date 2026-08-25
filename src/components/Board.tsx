@@ -13,7 +13,7 @@ export function Board() {
         onDoubleClick,
         editingId,
         overTrash,
-        patchNote,
+        editNote,
         stopEditing,
         draft,
         boardRef,
@@ -75,7 +75,7 @@ export function Board() {
                 <StickyNote
                     fading={overTrash && draggingId === note.id}
                     editing={editingId === note.id}
-                    onChange={patchNote}
+                    onChange={editNote}
                     onStopEditing={stopEditing}
                     onMove={moveNoteBy}
                     onResize={resizeNoteBy}

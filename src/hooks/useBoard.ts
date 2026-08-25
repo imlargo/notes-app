@@ -140,12 +140,20 @@ export function useBoard() {
         }
     }, [activeNoteId, notes, updateNote])
 
+    // grows the note to fit the text
+    const editNote = useCallback((id: number, changes: Partial<Note>) => {
+        const note = notes.find((n) => n.id === id)
+        if (!note) return
+        const { h } = clampSize({ ...note, ...changes }, boardSize())
+        patchNote(id, { ...changes, h })
+    }, [notes, boardSize, patchNote])
+
     const stopEditing = useCallback(() => {
         if (editingId === null) return
 
         const note = notes.find((n) => n.id === editingId)
         if (note) {
-            updateNote(note.id, { text: note.text })
+            updateNote(note.id, { text: note.text, h: note.h })
         }
 
         setEditingId(null)
@@ -329,7 +337,7 @@ export function useBoard() {
         onDoubleClick,
         editingId,
         overTrash,
-        patchNote,
+        editNote,
         stopEditing,
         draft,
         draggingId,
