@@ -1,33 +1,17 @@
-import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState, type MouseEvent } from "react";
 import { randomColor, type Note, type NoteColor } from "../domain/note";
 import { NoteService } from "../services/note";
 import { createRepository, type StorageType } from "../services/create-repository";
-import { clampPoint, clampPosition, clampSize, contains, position, rectFromPoints, resize, subtract, toRect, type Point, type Rect, type Size } from "../domain/geometry";
+import { clampPosition, clampSize, position, resize, toRect, type Rect } from "../domain/geometry";
 import { notesReducer } from "../state/notesReducer";
-
-// ref not state, this updates on every pointermove
-type Gesture =
-    | { kind: "create", origin: Point }
-    | { kind: "move", id: number, grab: Point, start: Rect }
-    | { kind: "resize", id: number, start: Rect, from: Point }
-
-
-// the same maths the preview uses, so the commit does not depend on the last frame having rendered
-function movedTo(g: Extract<Gesture, { kind: "move" }>, point: Point, bounds: Size): Rect {
-    return clampPosition({ ...g.start, ...subtract(point, g.grab) }, bounds)
-}
-
-function resizedTo(g: Extract<Gesture, { kind: "resize" }>, point: Point, bounds: Size): Rect {
-    return clampSize(resize(g.start, subtract(point, g.from)), bounds)
-}
+import { useBoardBounds } from "./useBoardBounds";
+import { useBoardGestures } from "./useBoardGestures";
 
 export function useBoard() {
     const [notes, dispatch] = useReducer(notesReducer, [])
     const notesRef = useRef(notes)
     useEffect(() => { notesRef.current = notes }, [notes])
-    const [draft, setDraft] = useState<Rect | null>(null)
     const [editingId, setEditingId] = useState<number | null>(null)
-    const [overTrash, setOverTrash] = useState<boolean>(false)
     const [pendingFocusId, setPendingFocusId] = useState<number | null>(null)
     const [announcement, setAnnouncement] = useState("")
     const [pendingCount, setPendingCount] = useState(0)
@@ -35,11 +19,7 @@ export function useBoard() {
     const [selectedColor, setSelectedColor] = useState<NoteColor>(() => randomColor())
     const [activeNoteId, setActiveNoteId] = useState<number | null>(null)
 
-    const trashRef = useRef<HTMLDivElement>(null)
-
-    const boardRef = useRef<HTMLDivElement>(null)
-    const boardOrigin = useRef<Point>({ x: 0, y: 0 })
-    const gesture = useRef<Gesture | null>(null)
+    const { boardRef, boardSize } = useBoardBounds()
 
     // negative so it doesnt collide with the repo
     const lastTempId = useRef(0)
@@ -56,24 +36,6 @@ export function useBoard() {
             return await fn()
         } finally {
             setPendingCount(c => c - 1)
-        }
-    }, [])
-
-    const toLocal = useCallback((e: React.PointerEvent): Point =>
-        subtract({ x: e.clientX, y: e.clientY }, boardOrigin.current), [])
-
-    const boardSize = useCallback((): Size => {
-        const r = boardRef.current?.getBoundingClientRect()
-        return r ? { w: r.width, h: r.height } : { w: Infinity, h: Infinity }
-    }, [])
-
-    const trashRect = useCallback((): Rect | null => {
-        const trash = trashRef.current?.getBoundingClientRect()
-        if (!trash) return null
-        return {
-            ...subtract({ x: trash.left, y: trash.top }, boardOrigin.current),
-            w: trash.width,
-            h: trash.height
         }
     }, [])
 
@@ -104,7 +66,7 @@ export function useBoard() {
         setEditingId(id)
     }, [])
 
-    const onDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const onDoubleClick = useCallback((e: MouseEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
         const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
         if (noteEl) startEditing(parseInt(noteEl.dataset.noteId || "0"))
@@ -216,103 +178,24 @@ export function useBoard() {
     }, [getNote, boardSize, updateNote])
 
 
-    const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        const target = e.target as HTMLElement
+    const selectNote = useCallback((id: number | null) => {
+        // grabbing a note both raises it and selects it
+        if (id !== null) bringToFront(id)
+        setActiveNoteId(id)
+    }, [bringToFront])
 
-        // anything interactive keeps its own behaviour instead of starting a drag
-        if (target.closest("textarea, button, a, select, [data-no-drag]")) return
-
-        const r = e.currentTarget.getBoundingClientRect();
-        boardOrigin.current = { x: r.left, y: r.top }
-        const point = toLocal(e)
-
-        // resize handle overlaps the note so it has to win the hit test first
-        const isResize = target.closest("[data-resize-handle]") !== null
-        const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
-        const note = noteEl ? getNote(parseInt(noteEl.dataset.noteId || "0")) : undefined
-
-        if (note) {
-            bringToFront(note.id)
-            setActiveNoteId(note.id)
-        }
-
-        if (note && isResize) {
-            gesture.current = {
-                kind: "resize",
-                id: note.id,
-                start: toRect(note),
-                from: point,
-            }
-        } else if (note) {
-            gesture.current = {
-                kind: "move",
-                id: note.id,
-                grab: subtract(point, position(note)),
-                start: toRect(note),
-            }
-        } else {
-            // clicking the background deselects, so the toolbar goes back to targeting new notes
-            setActiveNoteId(null)
-            gesture.current = { kind: "create", origin: point }
-        }
-
-        // so we keep getting move/up events even if the cursor leaves the board
-        e.currentTarget.setPointerCapture(e.pointerId)
-    }, [getNote, bringToFront, toLocal])
-
-    const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        const g = gesture.current
-        if (!g) return
-        const point = toLocal(e)
-
-        const bounds = boardSize()
-
-        if (g.kind === "create") {
-            setDraft(rectFromPoints(g.origin, clampPoint(point, bounds)))
-        } else if (g.kind === "move") {
-            patchNote(g.id, position(movedTo(g, point, bounds)))
-            const trash = trashRect()
-            setOverTrash(trash !== null && contains(trash, point))
-        } else if (g.kind === "resize") {
-            patchNote(g.id, resizedTo(g, point, bounds))
-        }
-    }, [patchNote, boardSize, toLocal, trashRect])
-
-    const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        const g = gesture.current
-        if (!g) return
-        const point = toLocal(e)
-
-        if (g.kind === "create") {
-            const rect = rectFromPoints(g.origin, point)
-            if (rect.w > 8 && rect.h > 8) {
-                createNote(rect)
-            }
-        } else if (g.kind === "move") {
-            const trash = trashRect();
-            if (trash && contains(trash, point)) {
-                deleteNote(g.id)
-            } else {
-                updateNote(g.id, position(movedTo(g, point, boardSize())), g.start)
-            }
-        } else {
-            updateNote(g.id, resizedTo(g, point, boardSize()), g.start)
-        }
-
-        gesture.current = null
-        setDraft(null)
-        setOverTrash(false)
-    }, [createNote, deleteNote, updateNote, boardSize, toLocal, trashRect])
-
-    const cancelGesture = useCallback(() => {
-        const g = gesture.current
-        if (!g) return
-        if (g.kind !== "create") patchNote(g.id, g.start)
-        gesture.current = null
-        setDraft(null)
-        setOverTrash(false)
-    }, [patchNote])
-
+    const {
+        trashRef, draft, overTrash, draggingId,
+        onPointerDown, onPointerMove, onPointerUp, cancelGesture,
+    } = useBoardGestures({
+        boardSize,
+        getNote,
+        preview: patchNote,
+        commit: updateNote,
+        onCreate: createNote,
+        onDelete: deleteNote,
+        onSelect: selectNote,
+    })
 
     useEffect(() => {
         load()
@@ -324,9 +207,6 @@ export function useBoard() {
         document.querySelector<HTMLElement>(`[data-note-id="${pendingFocusId}"]`)?.focus()
         setPendingFocusId(null)
     }, [pendingFocusId])
-
-    // reading the ref directly is fine, patchNote already rerenders on every move
-    const draggingId = gesture.current?.kind === "move" ? gesture.current.id : null
 
     return {
         notes,
