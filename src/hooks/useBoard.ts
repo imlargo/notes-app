@@ -12,6 +12,15 @@ type Gesture =
     | { kind: "resize", id: number, start: Rect, from: Point }
 
 
+// the same maths the preview uses, so the commit does not depend on the last frame having rendered
+function movedTo(g: Extract<Gesture, { kind: "move" }>, point: Point, bounds: Size): Rect {
+    return clampPosition({ ...g.start, ...subtract(point, g.grab) }, bounds)
+}
+
+function resizedTo(g: Extract<Gesture, { kind: "resize" }>, point: Point, bounds: Size): Rect {
+    return clampSize(resize(g.start, subtract(point, g.from)), bounds)
+}
+
 export function useBoard() {
     const [notes, dispatch] = useReducer(notesReducer, [])
     const notesRef = useRef(notes)
@@ -261,12 +270,11 @@ export function useBoard() {
         if (g.kind === "create") {
             setDraft(rectFromPoints(g.origin, clampPoint(point, bounds)))
         } else if (g.kind === "move") {
-            const moved = clampPosition({ ...g.start, ...subtract(point, g.grab) }, bounds)
-            patchNote(g.id, position(moved))
+            patchNote(g.id, position(movedTo(g, point, bounds)))
             const trash = trashRect()
             setOverTrash(trash !== null && contains(trash, point))
         } else if (g.kind === "resize") {
-            patchNote(g.id, clampSize(resize(g.start, subtract(point, g.from)), bounds))
+            patchNote(g.id, resizedTo(g, point, bounds))
         }
     }, [patchNote, boardSize, toLocal, trashRect])
 
@@ -285,18 +293,16 @@ export function useBoard() {
             if (trash && contains(trash, point)) {
                 deleteNote(g.id)
             } else {
-                const note = getNote(g.id)
-                if (note) updateNote(note.id, position(note), g.start)
+                updateNote(g.id, position(movedTo(g, point, boardSize())), g.start)
             }
         } else {
-            const note = getNote(g.id)
-            if (note) updateNote(note.id, toRect(note), g.start)
+            updateNote(g.id, resizedTo(g, point, boardSize()), g.start)
         }
 
         gesture.current = null
         setDraft(null)
         setOverTrash(false)
-    }, [getNote, createNote, deleteNote, updateNote, toLocal, trashRect])
+    }, [createNote, deleteNote, updateNote, boardSize, toLocal, trashRect])
 
     const cancelGesture = useCallback(() => {
         const g = gesture.current
