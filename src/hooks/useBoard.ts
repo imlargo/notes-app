@@ -4,13 +4,13 @@ import { NoteService } from "../services/note";
 import { MockNoteRepository } from "../services/memory-note-repository";
 import { LocalStorageRepository } from "../services/local-note-repository";
 import type { NoteRepository } from "../services/repository";
-import { contains, rectFromPoints, resize, type Point, type Rect } from "../domain/geometry";
+import { clampPoint, clampPosition, clampSize, contains, rectFromPoints, resize, type Point, type Rect, type Size } from "../domain/geometry";
 import { notesReducer } from "../state/notesReducer";
 
 // ref not state, this updates on every pointermove
 type Gesture =
     | { kind: "create", origin: Point }
-    | { kind: "move", id: number, grab: Point, start: Point }
+    | { kind: "move", id: number, grab: Point, start: Rect }
     | { kind: "resize", id: number, start: Rect, from: Point }
 
 export type StorageType = "memory" | "local"
@@ -34,6 +34,7 @@ export function useBoard() {
 
     const trashRef = useRef<HTMLDivElement>(null)
 
+    const boardRef = useRef<HTMLDivElement>(null)
     const boardOrigin = useRef<Point>({ x: 0, y: 0 })
     const gesture = useRef<Gesture | null>(null)
 
@@ -55,6 +56,11 @@ export function useBoard() {
         x: e.clientX - boardOrigin.current.x,
         y: e.clientY - boardOrigin.current.y,
     }), [])
+
+    const boardSize = useCallback((): Size => {
+        const r = boardRef.current?.getBoundingClientRect()
+        return r ? { w: r.width, h: r.height } : { w: Infinity, h: Infinity }
+    }, [])
 
     const trashRect = useCallback((): Rect | null => {
         const trash = trashRef.current?.getBoundingClientRect()
@@ -191,16 +197,16 @@ export function useBoard() {
     const moveNoteBy = useCallback((id: number, dx: number, dy: number) => {
         const note = notes.find(n => n.id === id)
         if (!note) return
-        const next = { x: note.x + dx, y: note.y + dy }
-        updateNote(id, next, { x: note.x, y: note.y })
-    }, [notes, updateNote])
+        const moved = clampPosition({ ...note, x: note.x + dx, y: note.y + dy }, boardSize())
+        updateNote(id, { x: moved.x, y: moved.y }, { x: note.x, y: note.y })
+    }, [notes, boardSize, updateNote])
 
     const resizeNoteBy = useCallback((id: number, dw: number, dh: number) => {
         const note = notes.find(n => n.id === id)
         if (!note) return
-        const next = resize(note, { x: dw, y: dh })
+        const next = clampSize(resize(note, { x: dw, y: dh }), boardSize())
         updateNote(id, next, { x: note.x, y: note.y, w: note.w, h: note.h })
-    }, [notes, updateNote])
+    }, [notes, boardSize, updateNote])
 
 
     const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -235,7 +241,7 @@ export function useBoard() {
                 kind: "move",
                 id: note.id,
                 grab: { x: point.x - note.x, y: point.y - note.y },
-                start: { x: note.x, y: note.y },
+                start: { x: note.x, y: note.y, w: note.w, h: note.h },
             }
         } else {
             // clicking the background clears the selection
@@ -252,18 +258,20 @@ export function useBoard() {
         if (!g) return
         const point = toLocal(e)
 
+        const bounds = boardSize()
+
         if (g.kind === "create") {
-            setDraft(rectFromPoints(g.origin, point))
+            setDraft(rectFromPoints(g.origin, clampPoint(point, bounds)))
         } else if (g.kind === "move") {
-            patchNote(g.id, { x: point.x - g.grab.x, y: point.y - g.grab.y })
+            const moved = clampPosition({ ...g.start, x: point.x - g.grab.x, y: point.y - g.grab.y }, bounds)
+            patchNote(g.id, { x: moved.x, y: moved.y })
             const trash = trashRect()
             setOverTrash(trash !== null && contains(trash, point))
         } else if (g.kind === "resize") {
             const d: Point = { x: point.x - g.from.x, y: point.y - g.from.y }
-            const rect = resize(g.start, d)
-            patchNote(g.id, { ...rect })
+            patchNote(g.id, clampSize(resize(g.start, d), bounds))
         }
-    }, [patchNote, toLocal, trashRect])
+    }, [patchNote, boardSize, toLocal, trashRect])
 
     const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
@@ -325,6 +333,7 @@ export function useBoard() {
         stopEditing,
         draft,
         draggingId,
+        boardRef,
         trashRef,
         addNote,
         moveNoteBy,

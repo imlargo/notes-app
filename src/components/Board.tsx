@@ -16,6 +16,7 @@ export function Board() {
         patchNote,
         stopEditing,
         draft,
+        boardRef,
         trashRef,
         draggingId,
         addNote,
@@ -41,6 +42,7 @@ export function Board() {
 
     return (
         <div className="board canvas-grid w-full h-full relative select-none"
+            ref={boardRef}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
