@@ -1,8 +1,10 @@
 import { useRef } from "react";
 import { StickyNote } from "./StickyNote";
 import { Toolbar } from "./Toolbar";
-import { Trash, Loader2 } from "lucide-react";
+import { Trash } from "lucide-react";
 import { useBoard } from "../hooks/useBoard";
+import { StorageSelector } from "./StorageSelector";
+import { SyncIndicator } from "./SyncIndicator";
 
 export function Board() {
     const {
@@ -59,22 +61,9 @@ export function Board() {
 
             <div aria-live="polite" className="sr-only">{announcement}</div>
 
-            <select
-                value={storageType}
-                onChange={(e) => changeStorage(e.target.value as typeof storageType)}
-                aria-label="Storage backend"
-                className="fixed top-4 right-4 z-20 pointer-events-auto border rounded-full bg-white px-4 py-2"
-            >
-                <option value="memory">Memory (resets on reload)</option>
-                <option value="local">Local storage (persists)</option>
-            </select>
+            <StorageSelector value={storageType} onChange={changeStorage} />
 
-            {isLoading && (
-                <div role="status" className="fixed top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-x-2 bg-neutral-900 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-sm pointer-events-none">
-                    <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-                    <span>Syncing...</span>
-                </div>
-            )}
+            {isLoading && <SyncIndicator />}
 
             {notes.map((note) => (
                 <StickyNote
