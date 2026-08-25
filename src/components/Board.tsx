@@ -5,6 +5,8 @@ import { useBoard } from "../hooks/useBoard";
 import { StorageSelector } from "./StorageSelector";
 import { SyncIndicator } from "./SyncIndicator";
 import { DraftRect } from "./DraftRect";
+import { ScreenReaderStatus } from "./ScreenReaderStatus";
+import { AuthorLink } from "./AuthorLink";
 import { TrashZone } from "./TrashZone";
 
 export function Board() {
@@ -56,11 +58,7 @@ export function Board() {
             onLostPointerCapture={cancelGesture}
             onDoubleClick={onDoubleClick}
         >
-            <p id="board-instructions" className="sr-only">
-                Arrow keys move the focused note, hold shift to move further, hold alt to resize instead, enter opens it for editing, delete removes it, escape deselects it.
-            </p>
-
-            <div aria-live="polite" className="sr-only">{announcement}</div>
+            <ScreenReaderStatus announcement={announcement} />
 
             <StorageSelector value={storageType} onChange={changeStorage} />
 
@@ -87,15 +85,7 @@ export function Board() {
             {draft && <DraftRect rect={draft} />}
 
             <div className="flex items-center justify-between fixed bottom-6 inset-x-0 pointer-events-none px-4">
-                <a
-                    href="https://github.com/imlargo"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="pointer-events-auto flex items-center gap-x-2 px-3 py-2 rounded-full bg-white border text-sm font-medium"
-                >
-                    <span className="text-neutral-400">by</span>
-                    <span>imlargo.dev</span>
-                </a>
+                <AuthorLink />
 
                 <Toolbar
                     ref={addButtonRef}

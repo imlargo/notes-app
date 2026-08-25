@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, type CSSProperties, type KeyboardEvent } from "react";
 import { COLOR_CLASSES, type Note } from "../domain/note"
 import { GripHorizontal } from "lucide-react";
+import { BOARD_INSTRUCTIONS_ID } from "./ScreenReaderStatus";
 
 interface StickyNoteProps {
     note: Note
@@ -75,7 +76,7 @@ export const StickyNote = memo(({ note, className, fading, editing, active, onCh
         role="group"
         aria-roledescription="sticky note"
         aria-label={note.text || "Empty note"}
-        aria-describedby="board-instructions"
+        aria-describedby={BOARD_INSTRUCTIONS_ID}
         aria-current={active ? "true" : undefined}
         onKeyDown={onKeyDown}
         onFocus={() => onActivate?.(note.id)}
