@@ -1,276 +1,103 @@
-import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { randomColor, nextColor, type Note, type NoteColor } from "../domain/note";
-import { NoteService } from "../services/note";
-import { MockNoteRepository } from "../services/memory-note-repository";
-import { LocalStorageRepository } from "../services/local-note-repository";
-import type { NoteRepository } from "../services/repository";
-import { contains, rectFromPoints, resize, type Point, type Rect } from "../domain/geometry";
-import { notesReducer } from "../state/notesReducer";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
+import { randomColor, type Note, type NoteColor } from "../domain/note";
+import { clampPosition, clampSize, position, resize, toRect, type Rect } from "../domain/geometry";
+import { useNotes } from "./useNotes";
+import { useBoardBounds } from "./useBoardBounds";
+import { useBoardGestures } from "./useBoardGestures";
 
-// ref not state, this updates on every pointermove
-type Gesture =
-    | { kind: "create", origin: Point }
-    | { kind: "move", id: number, grab: Point }
-    | { kind: "resize", id: number, start: Rect, from: Point }
-
-export type StorageType = "memory" | "local"
-
-function createRepository(type: StorageType): NoteRepository {
-    return type === "local" ? new LocalStorageRepository() : new MockNoteRepository()
-}
-
+const NEW_NOTE = { w: 160, h: 130 }
 
 export function useBoard() {
-    const [notes, dispatch] = useReducer(notesReducer, [])
-    const [draft, setDraft] = useState<Rect | null>(null)
+    const {
+        notes, getNote, bringToFront, patchNote, updateNote, createNote, removeNote,
+        announcement, error, isLoading, storageType, changeStorage,
+    } = useNotes()
+
+    const { boardRef, boardSize } = useBoardBounds()
+
     const [editingId, setEditingId] = useState<number | null>(null)
-    const [overTrash, setOverTrash] = useState<boolean>(false)
-    const [pendingFocusId, setPendingFocusId] = useState<number | null>(null)
-    const [announcement, setAnnouncement] = useState("")
-    const [pendingCount, setPendingCount] = useState(0)
-    const [storageType, setStorageType] = useState<StorageType>("memory")
-    const [selectedColor, setSelectedColor] = useState<NoteColor>(() => randomColor())
     const [activeNoteId, setActiveNoteId] = useState<number | null>(null)
+    const [pendingFocusId, setPendingFocusId] = useState<number | null>(null)
+    const [selectedColor, setSelectedColor] = useState<NoteColor>(() => randomColor())
 
-    const trashRef = useRef<HTMLDivElement>(null)
+    const startEditing = useCallback((id: number) => setEditingId(id), [])
+    const clearActive = useCallback(() => setActiveNoteId(null), [])
 
-    const boardOrigin = useRef<Point>({ x: 0, y: 0 })
-    const gesture = useRef<Gesture | null>(null)
-
-    const noteService = useRef(new NoteService(createRepository("memory")))
-
-    const withPending = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
-        setPendingCount(c => c + 1)
-        try {
-            return await fn()
-        } finally {
-            setPendingCount(c => c - 1)
-        }
-    }, [])
-
-    const toLocal = useCallback((e: React.PointerEvent): Point => ({
-        x: e.clientX - boardOrigin.current.x,
-        y: e.clientY - boardOrigin.current.y,
-    }), [])
-
-    const trashRect = useCallback((): Rect | null => {
-        const trash = trashRef.current?.getBoundingClientRect()
-        if (!trash) return null
-        return {
-            x: trash.left - boardOrigin.current.x,
-            y: trash.top - boardOrigin.current.y,
-            w: trash.width,
-            h: trash.height
-        }
-    }, [])
-
-    const bringToFront = useCallback((id: number) => {
-        dispatch({
-            type: "bringToFront",
-            id: id,
-        })
-    }, [])
-
-
-    const load = useCallback(() => {
-        withPending(() => noteService.current.getNotes()).then((data) => dispatch({ type: "load", notes: data }))
-    }, [withPending])
-
-    // swaps the backend and reloads from it, super simple, no migration between the two
-    const changeStorage = useCallback((type: StorageType) => {
-        setStorageType(type)
-        noteService.current = new NoteService(createRepository(type))
-        load()
-    }, [load])
-
-    const startEditing = useCallback((id: number) => {
-        setEditingId(id)
-    }, [])
-
-    const activateNote = useCallback((id: number) => {
-        setActiveNoteId(id)
-    }, [])
-
-    const onDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-        const target = e.target as HTMLElement
-        const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
+    const onDoubleClick = useCallback((e: MouseEvent<HTMLDivElement>) => {
+        const noteEl = (e.target as HTMLElement).closest<HTMLDivElement>("[data-note-id]")
         if (noteEl) startEditing(parseInt(noteEl.dataset.noteId || "0"))
     }, [startEditing])
 
-
-    const patchNote = useCallback((id: number, changes: Partial<Note>) => {
-        dispatch({
-            type: "patch",
-            id,
-            changes
-        })
-    }, [])
-
-
-    // this actually persists it, patchNote above is just the optimistic update
-    const updateNote = useCallback(async (id: number, note: Partial<Note>) => {
-        const updated = await withPending(() => noteService.current.updateNote(id, note))
-        patchNote(id, updated)
-    }, [patchNote, withPending])
-
-    // if a note is active (last one focused), cycle its color instead of the default for new notes
-    const cycleColor = useCallback(() => {
-        const active = activeNoteId !== null ? notes.find(n => n.id === activeNoteId) : undefined
-        if (active) {
-            const next = { color: nextColor(active.color) }
-            patchNote(active.id, next)
-            updateNote(active.id, { ...active, ...next })
-        } else {
-            setSelectedColor((c) => nextColor(c))
-        }
-    }, [activeNoteId, notes, patchNote, updateNote])
-
     const stopEditing = useCallback(() => {
         if (editingId === null) return
-
-        const note = notes.find((n) => n.id === editingId)
-        if (note) {
-            updateNote(note.id, note)
-        }
-
+        const note = getNote(editingId)
+        if (note) updateNote(note.id, { text: note.text, h: note.h })
         setEditingId(null)
-    }, [editingId, notes, updateNote])
+    }, [editingId, getNote, updateNote])
 
-    const createNote = useCallback(async (rect: Rect) => {
-        const created = await withPending(() => noteService.current.createNote({ ...rect, text: "", color: selectedColor }))
-        dispatch({
-            type: "add",
-            note: created
-        })
-        setAnnouncement("Note created")
-        return created
-    }, [withPending, selectedColor])
+    // grows the note to fit the text
+    const editNote = useCallback((id: number, changes: Partial<Note>) => {
+        const note = getNote(id)
+        if (!note) return
+        const { h } = clampSize({ ...note, ...changes }, boardSize())
+        patchNote(id, { ...changes, h })
+    }, [getNote, boardSize, patchNote])
 
-    // keyboard-only way to create a note, since drag-to-create has no keyboard equivalent
+    const addNoteAt = useCallback((rect: Rect) =>
+        createNote({ ...rect, text: "", color: selectedColor }), [createNote, selectedColor])
+
+    // keyboard-only way to create a note
     const addNote = useCallback(async () => {
         const offset = (notes.length % 6) * 24
-        const created = await createNote({ x: 40 + offset, y: 40 + offset, w: 160, h: 130 })
-        setPendingFocusId(created.id)
-    }, [notes.length, createNote])
+        const created = await addNoteAt({ x: 40 + offset, y: 40 + offset, ...NEW_NOTE })
+        if (created) setPendingFocusId(created.id)
+    }, [notes.length, addNoteAt])
 
-    const deleteNote = useCallback(async (id: number) => {
-        await withPending(() => noteService.current.deleteNote(id))
-        dispatch({
-            type: "remove",
-            id
-        })
-
+    // dropping a note also drops any UI state pointing at it
+    const deleteNote = useCallback((id: number) => {
         setEditingId((curr) => curr === id ? null : curr)
         setActiveNoteId((curr) => curr === id ? null : curr)
-        setAnnouncement("Note deleted")
-    }, [withPending])
+        return removeNote(id)
+    }, [removeNote])
 
     const moveNoteBy = useCallback((id: number, dx: number, dy: number) => {
-        const note = notes.find(n => n.id === id)
+        const note = getNote(id)
         if (!note) return
-        const next = { x: note.x + dx, y: note.y + dy }
-        patchNote(id, next)
-        updateNote(id, { ...note, ...next })
-    }, [notes, patchNote, updateNote])
+        const moved = clampPosition({ ...note, x: note.x + dx, y: note.y + dy }, boardSize())
+        updateNote(id, position(moved), position(note))
+    }, [getNote, boardSize, updateNote])
 
     const resizeNoteBy = useCallback((id: number, dw: number, dh: number) => {
-        const note = notes.find(n => n.id === id)
+        const note = getNote(id)
         if (!note) return
-        const next = resize(note, { x: dw, y: dh })
-        patchNote(id, next)
-        updateNote(id, { ...note, ...next })
-    }, [notes, patchNote, updateNote])
+        const next = clampSize(resize(note, { x: dw, y: dh }), boardSize())
+        updateNote(id, next, toRect(note))
+    }, [getNote, boardSize, updateNote])
 
+    const selectNote = useCallback((id: number | null) => {
+        if (id !== null) bringToFront(id)
+        setActiveNoteId(id)
+    }, [bringToFront])
 
-    const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        const target = e.target as HTMLElement
+    const {
+        trashRef, draft, overTrash, draggingId,
+        onPointerDown, onPointerMove, onPointerUp, cancelGesture,
+    } = useBoardGestures({
+        boardSize,
+        getNote,
+        preview: patchNote,
+        commit: updateNote,
+        onCreate: addNoteAt,
+        onDelete: deleteNote,
+        onSelect: selectNote,
+    })
 
-        // anything interactive keeps its own behaviour instead of starting a drag
-        if (target.closest("textarea, button, a, select")) return
+    const activeNote = activeNoteId !== null ? notes.find((n) => n.id === activeNoteId) : undefined
 
-        const r = e.currentTarget.getBoundingClientRect();
-        boardOrigin.current = { x: r.left, y: r.top }
-        const point = toLocal(e)
-
-        // resize handle overlaps the note so it has to win the hit test first
-        const isResize = target.closest("[data-resize-handle]") !== null
-        const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
-        const note = noteEl ? notes.find((n) => n.id === parseInt(noteEl.dataset.noteId || "0")) : undefined
-
-        if (note) {
-            bringToFront(note.id)
-        }
-
-        if (note && isResize) {
-            gesture.current = {
-                kind: "resize",
-                id: note.id,
-                start: { x: note.x, y: note.y, w: note.w, h: note.h },
-                from: point,
-            }
-        } else if (note) {
-            gesture.current = {
-                kind: "move",
-                id: note.id,
-                grab: { x: point.x - note.x, y: point.y - note.y }
-            }
-        } else {
-            gesture.current = { kind: "create", origin: point }
-        }
-
-        // so we keep getting move/up events even if the cursor leaves the board
-        e.currentTarget.setPointerCapture(e.pointerId)
-    }, [notes, bringToFront, toLocal])
-
-    const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        const g = gesture.current
-        if (!g) return
-        const point = toLocal(e)
-
-        if (g.kind === "create") {
-            setDraft(rectFromPoints(g.origin, point))
-        } else if (g.kind === "move") {
-            patchNote(g.id, { x: point.x - g.grab.x, y: point.y - g.grab.y })
-            const trash = trashRect()
-            setOverTrash(trash !== null && contains(trash, point))
-        } else if (g.kind === "resize") {
-            const d: Point = { x: point.x - g.from.x, y: point.y - g.from.y }
-            const rect = resize(g.start, d)
-            patchNote(g.id, { ...rect })
-        }
-    }, [patchNote, toLocal, trashRect])
-
-    const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        const g = gesture.current
-        if (!g) return
-        const point = toLocal(e)
-
-        if (g.kind === "create") {
-            const rect = rectFromPoints(g.origin, point)
-            if (rect.w > 8 && rect.h > 8) {
-                createNote(rect)
-            }
-        } else if (g.kind === "move") {
-            const trash = trashRect();
-            if (trash && contains(trash, point)) {
-                deleteNote(g.id)
-            } else {
-                const note = notes.find(n => n.id === g.id)
-                if (note) updateNote(note.id, note)
-            }
-        } else {
-            const note = notes.find(n => n.id === g.id)
-            if (note) updateNote(note.id, note)
-        }
-
-        gesture.current = null
-        setDraft(null)
-    }, [notes, createNote, deleteNote, updateNote, toLocal, trashRect])
-
-
-    useEffect(() => {
-        load()
-    }, [load])
+    const selectColor = useCallback((color: NoteColor) => {
+        if (!activeNote) return setSelectedColor(color)
+        updateNote(activeNote.id, { color }, { color: activeNote.color })
+    }, [activeNote, updateNote])
 
     // focus a note right after creating it via the add-note button, keyboard-only path
     useEffect(() => {
@@ -279,36 +106,35 @@ export function useBoard() {
         setPendingFocusId(null)
     }, [pendingFocusId])
 
-    // reading the ref directly is fine, patchNote already rerenders on every move
-    const draggingId = gesture.current?.kind === "move" ? gesture.current.id : null
-
-    const activeNote = activeNoteId !== null ? notes.find(n => n.id === activeNoteId) : undefined
-    const toolbarColor = activeNote?.color ?? selectedColor
-
     return {
         notes,
         onPointerDown,
         onPointerMove,
         onPointerUp,
+        cancelGesture,
         onDoubleClick,
         editingId,
         overTrash,
-        patchNote,
+        editNote,
         stopEditing,
         draft,
         draggingId,
+        boardRef,
         trashRef,
         addNote,
         moveNoteBy,
         resizeNoteBy,
         deleteNote,
         startEditing,
-        activateNote,
         announcement,
-        isLoading: pendingCount > 0,
+        error,
+        isLoading,
         storageType,
         changeStorage,
-        toolbarColor,
-        cycleColor,
+        activeNoteId,
+        activateNote: setActiveNoteId,
+        deactivateNote: clearActive,
+        toolbarColor: activeNote?.color ?? selectedColor,
+        selectColor,
     }
 }

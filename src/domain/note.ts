@@ -19,11 +19,6 @@ export function randomColor() {
     return NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)]
 }
 
-export function nextColor(current: NoteColor) {
-    const i = NOTE_COLORS.indexOf(current)
-    return NOTE_COLORS[(i + 1) % NOTE_COLORS.length]
-}
-
 export type Note = {
     id: number;
     text: string;
