@@ -37,6 +37,9 @@ export function useBoard() {
     const boardOrigin = useRef<Point>({ x: 0, y: 0 })
     const gesture = useRef<Gesture | null>(null)
 
+    // negative so it doesnt collide with the repo
+    const lastTempId = useRef(0)
+
     const noteService = useRef(new NoteService(createRepository("memory")))
 
     const withPending = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
@@ -135,21 +138,30 @@ export function useBoard() {
         setEditingId(null)
     }, [editingId, notes, updateNote])
 
-    const createNote = useCallback(async (rect: Rect) => {
-        const created = await withPending(() => noteService.current.createNote({ ...rect, text: "", color: selectedColor }))
-        dispatch({
-            type: "add",
-            note: created
-        })
+    // optimistic
+    const createNote = useCallback(async (rect: Rect): Promise<Note | null> => {
+        const draft = { ...rect, text: "", color: selectedColor }
+        const tempId = --lastTempId.current
+
+        dispatch({ type: "add", note: { ...draft, id: tempId } })
         setAnnouncement("Note created")
-        return created
+
+        try {
+            const created = await withPending(() => noteService.current.createNote(draft))
+            dispatch({ type: "replace", id: tempId, note: created })
+            return created
+        } catch {
+            dispatch({ type: "remove", id: tempId })
+            setAnnouncement("Could not create the note")
+            return null
+        }
     }, [withPending, selectedColor])
 
     // keyboard-only way to create a note, since drag-to-create has no keyboard equivalent
     const addNote = useCallback(async () => {
         const offset = (notes.length % 6) * 24
         const created = await createNote({ x: 40 + offset, y: 40 + offset, w: 160, h: 130 })
-        setPendingFocusId(created.id)
+        if (created) setPendingFocusId(created.id)
     }, [notes.length, createNote])
 
     const deleteNote = useCallback(async (id: number) => {
