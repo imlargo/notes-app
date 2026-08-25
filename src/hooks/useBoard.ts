@@ -110,22 +110,22 @@ export function useBoard() {
     }, [])
 
 
-    // persists only the changed fields
+    // only patch changed fields
     const updateNote = useCallback(async (id: number, changes: Partial<Note>) => {
+        patchNote(id, changes)
         await withPending(() => noteService.current.updateNote(id, changes))
-    }, [withPending])
+    }, [patchNote, withPending])
 
     // if a note is active it changes the color, otherwise changes the color of the next new note
     const cycleColor = useCallback(() => {
         const active = activeNoteId !== null ? notes.find(n => n.id === activeNoteId) : undefined
         if (active) {
             const next = { color: nextColor(active.color) }
-            patchNote(active.id, next)
             updateNote(active.id, next)
         } else {
             setSelectedColor((c) => nextColor(c))
         }
-    }, [activeNoteId, notes, patchNote, updateNote])
+    }, [activeNoteId, notes, updateNote])
 
     const stopEditing = useCallback(() => {
         if (editingId === null) return
@@ -180,17 +180,15 @@ export function useBoard() {
         const note = notes.find(n => n.id === id)
         if (!note) return
         const next = { x: note.x + dx, y: note.y + dy }
-        patchNote(id, next)
         updateNote(id, next)
-    }, [notes, patchNote, updateNote])
+    }, [notes, updateNote])
 
     const resizeNoteBy = useCallback((id: number, dw: number, dh: number) => {
         const note = notes.find(n => n.id === id)
         if (!note) return
         const next = resize(note, { x: dw, y: dh })
-        patchNote(id, next)
         updateNote(id, next)
-    }, [notes, patchNote, updateNote])
+    }, [notes, updateNote])
 
 
     const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
