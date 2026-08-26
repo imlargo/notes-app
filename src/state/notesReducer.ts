@@ -5,7 +5,7 @@ export type Action =
     | { type: "add", note: Note }
     | { type: "patch", id: number, changes: Partial<Note> }
     | { type: "remove", id: number }
-    | { type: "replace", id: number, note: Note }
+    | { type: "reassignId", from: number, to: number }
     | { type: "bringToFront", id: number }
 
 
@@ -28,8 +28,8 @@ export function notesReducer(state: Note[], action: Action): Note[] {
         case "remove":
             return state.filter((n) => n.id !== action.id)
 
-        case "replace":
-            return state.map((n) => n.id === action.id ? action.note : n)
+        case "reassignId":
+            return state.map((n) => n.id === action.from ? { ...n, id: action.to } : n)
 
         case "bringToFront": {
             // z order is just array order, moving to front = moving to the end

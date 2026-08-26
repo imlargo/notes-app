@@ -81,7 +81,7 @@ export function useNotes() {
 
         try {
             const created = await withPending(() => noteService.current.createNote(draft))
-            dispatch({ type: "replace", id: tempId, note: created })
+            dispatch({ type: "reassignId", from: tempId, to: created.id })
             return created
         } catch {
             dispatch({ type: "remove", id: tempId })
