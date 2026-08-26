@@ -17,6 +17,7 @@ function resizedTo(g: Extract<Gesture, { kind: "resize" }>, point: Point, bounds
 }
 
 const MIN_DRAWN_SIZE = 8
+const DRAG_THRESHOLD = 4 // how far the pointer has to travel before a press counts as a drag
 
 interface BoardGesturesOptions {
     boardSize: () => Size
@@ -36,6 +37,7 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
     const trashRef = useRef<HTMLDivElement>(null)
     const boardOrigin = useRef<Point>({ x: 0, y: 0 })
     const gesture = useRef<Gesture | null>(null)
+    const pendingCapture = useRef<Point | null>(null)
 
     const toLocal = useCallback((e: PointerEvent): Point =>
         subtract({ x: e.clientX, y: e.clientY }, boardOrigin.current), [])
@@ -52,6 +54,7 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
 
     const endGesture = useCallback(() => {
         gesture.current = null
+        pendingCapture.current = null
         setDraft(null)
         setOverTrash(false)
     }, [])
@@ -81,8 +84,7 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
             gesture.current = { kind: "create", origin: point }
         }
 
-        // so we keep getting move/up events even if the cursor leaves the board
-        e.currentTarget.setPointerCapture(e.pointerId)
+        pendingCapture.current = point
     }, [getNote, onSelect, toLocal])
 
     const onPointerMove = useCallback((e: PointerEvent<HTMLDivElement>) => {
@@ -90,6 +92,13 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
         if (!g) return
         const point = toLocal(e)
         const bounds = boardSize()
+
+        const pending = pendingCapture.current
+        if (pending) {
+            if (Math.hypot(point.x - pending.x, point.y - pending.y) < DRAG_THRESHOLD) return
+            pendingCapture.current = null
+            e.currentTarget.setPointerCapture(e.pointerId)
+        }
 
         if (g.kind === "create") {
             setDraft(rectFromPoints(g.origin, clampPoint(point, bounds)))
@@ -115,10 +124,12 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
             if (trash && contains(trash, point)) {
                 onDelete(g.id)
             } else {
-                commit(g.id, position(movedTo(g, point, boardSize())), g.start)
+                const moved = position(movedTo(g, point, boardSize()))
+                if (moved.x !== g.start.x || moved.y !== g.start.y) commit(g.id, moved, g.start)
             }
         } else {
-            commit(g.id, resizedTo(g, point, boardSize()), g.start)
+            const resized = resizedTo(g, point, boardSize())
+            if (resized.w !== g.start.w || resized.h !== g.start.h) commit(g.id, resized, g.start)
         }
 
         endGesture()

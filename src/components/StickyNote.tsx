@@ -88,7 +88,7 @@ export const StickyNote = memo(({ note, className, fading, editing, active, onCh
         <div className="flex-1 min-h-0 w-full  p-4">
             <textarea
                 ref={textareaRef}
-                className="text-neutral-600 w-full h-full resize-none outline-none bg-none"
+                className={`text-neutral-600 w-full h-full resize-none outline-none bg-none ${editing ? "cursor-text select-text" : "pointer-events-none"}`}
                 aria-label="Note text"
 
                 value={note.text}

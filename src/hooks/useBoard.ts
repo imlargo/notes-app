@@ -24,7 +24,9 @@ export function useBoard() {
     const clearActive = useCallback(() => setActiveNoteId(null), [])
 
     const onDoubleClick = useCallback((e: MouseEvent<HTMLDivElement>) => {
-        const noteEl = (e.target as HTMLElement).closest<HTMLDivElement>("[data-note-id]")
+        const target = e.target as HTMLElement
+        if (target.closest("[data-resize-handle]")) return
+        const noteEl = target.closest<HTMLDivElement>("[data-note-id]")
         if (noteEl) startEditing(parseInt(noteEl.dataset.noteId || "0"))
     }, [startEditing])
 
