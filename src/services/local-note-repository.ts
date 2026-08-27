@@ -4,6 +4,7 @@ import type { NoteRepository } from "./repository";
 
 // sleep just to fake network latency like the other repo
 const STORAGE_KEY = "notes"
+const NEXT_ID_KEY = "notes:next-id"
 
 function loadNotes(): Note[] {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -20,7 +21,10 @@ function saveNotes(notes: Note[]): void {
 }
 
 function generateNewID(notes: Note[]): number {
-    return notes.reduce((max, n) => Math.max(max, n.id), 0) + 1;
+    const stored = Number(localStorage.getItem(NEXT_ID_KEY))
+    const id = stored > 0 ? stored : notes.reduce((max, n) => Math.max(max, n.id), 0) + 1
+    localStorage.setItem(NEXT_ID_KEY, String(id + 1))
+    return id
 }
 
 export class LocalStorageRepository implements NoteRepository {
@@ -59,6 +63,8 @@ export class LocalStorageRepository implements NoteRepository {
         const notes = loadNotes();
 
         const index = notes.findIndex((note) => note.id === noteId)
+        if (index === -1) throw new Error(`Note ${noteId} does not exist`)
+
         const updated = {
             ...notes[index],
             ...data,
