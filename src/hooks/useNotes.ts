@@ -70,6 +70,9 @@ export function useNotes() {
     // only patch changed fields
     const updateNote = useCallback(async (id: number, changes: Partial<Note>, rollback?: Partial<Note>) => {
         patchNote(id, changes)
+
+        if (id < 0) return
+
         try {
             await withPending(() => service.updateNote(id, changes))
         } catch {
