@@ -1,8 +1,7 @@
-import type { Ref } from "react"
+import { memo, type Ref } from "react"
 import { Trash } from "lucide-react"
 
-// no pointer events, useBoard only reads its position through the ref to hit test a drop
-export function TrashZone({ ref }: { ref: Ref<HTMLDivElement> }) {
+export const TrashZone = memo(function TrashZone({ ref }: { ref: Ref<HTMLDivElement> }) {
     return <div
         ref={ref}
         aria-hidden="true"
@@ -10,4 +9,4 @@ export function TrashZone({ ref }: { ref: Ref<HTMLDivElement> }) {
     >
         <Trash className="size-5 text-red-800" />
     </div>
-}
+})
