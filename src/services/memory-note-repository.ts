@@ -40,6 +40,8 @@ export class MockNoteRepository implements NoteRepository {
         await sleep(500);
 
         const index = _mockNotes.findIndex((note) => note.id === noteId)
+        if (index === -1) throw new Error(`Note ${noteId} does not exist`)
+
         const updated = {
             ..._mockNotes[index],
             ...data,
