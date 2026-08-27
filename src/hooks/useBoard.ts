@@ -30,12 +30,11 @@ export function useBoard() {
         if (noteEl) startEditing(parseInt(noteEl.dataset.noteId || "0"))
     }, [startEditing])
 
-    const stopEditing = useCallback(() => {
-        if (editingId === null) return
-        const note = getNote(editingId)
-        if (note) updateNote(note.id, { text: note.text, h: note.h })
-        setEditingId(null)
-    }, [editingId, getNote, updateNote])
+    const stopEditing = useCallback((id: number) => {
+        const note = getNote(id)
+        if (note) updateNote(id, { text: note.text, h: note.h })
+        setEditingId((curr) => curr === id ? null : curr)
+    }, [getNote, updateNote])
 
     // grows the note to fit the text
     const editNote = useCallback((id: number, changes: Partial<Note>) => {
@@ -97,9 +96,10 @@ export function useBoard() {
     const activeNote = activeNoteId !== null ? notes.find((n) => n.id === activeNoteId) : undefined
 
     const selectColor = useCallback((color: NoteColor) => {
-        if (!activeNote) return setSelectedColor(color)
-        updateNote(activeNote.id, { color }, { color: activeNote.color })
-    }, [activeNote, updateNote])
+        if (activeNoteId === null) return setSelectedColor(color)
+        const note = getNote(activeNoteId)
+        if (note) updateNote(note.id, { color }, { color: note.color })
+    }, [activeNoteId, getNote, updateNote])
 
     // focus a note right after creating it via the add-note button, keyboard-only path
     useEffect(() => {

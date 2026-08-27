@@ -11,7 +11,7 @@ interface StickyNoteProps {
     editing?: boolean;
     active?: boolean;
     onChange?: (id: number, changes: Partial<Note>) => void
-    onStopEditing?: () => void
+    onStopEditing?: (id: number) => void
     onMove?: (id: number, dx: number, dy: number) => void
     onResize?: (id: number, dw: number, dh: number) => void
     onDelete?: (id: number) => void
@@ -93,7 +93,7 @@ export const StickyNote = memo(({ note, className, fading, editing, active, onCh
 
                 value={note.text}
                 onChange={(e) => onTextChange(e.target.value)}
-                onBlur={onStopEditing}
+                onBlur={() => { if (editing) onStopEditing?.(note.id) }}
 
                 readOnly={!editing}
                 // one tab stop per note, you get into the text with enter instead

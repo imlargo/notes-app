@@ -20,7 +20,8 @@ export function useNotes() {
     // negative so it doesnt collide with the repo
     const lastTempId = useRef(0)
 
-    const noteService = useRef(new NoteService(createRepository("memory")))
+    // the service is state, so picking a backend is just swapping it and the load effect follows
+    const [service, setService] = useState(() => new NoteService(createRepository("memory")))
 
     // ref keeps re-renders stable
     const getNote = useCallback((id: number) => notesRef.current.find((n) => n.id === id), [])
@@ -31,6 +32,8 @@ export function useNotes() {
         errorTimer.current = setTimeout(() => setError(null), ERROR_TIMEOUT)
     }, [])
 
+    useEffect(() => () => clearTimeout(errorTimer.current), [])
+
     const withPending = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
         setPendingCount(c => c + 1)
         try {
@@ -40,17 +43,20 @@ export function useNotes() {
         }
     }, [])
 
-    const load = useCallback(() => {
-        withPending(() => noteService.current.getNotes())
-            .then((data) => dispatch({ type: "load", notes: data }))
-            .catch(() => fail("Could not load the notes"))
-    }, [withPending, fail])
+    // loads on mount and again on every backend change. the cleanup drops a list() still in flight
+    // from the previous one, so its answer cannot land after the new backend has already loaded
+    useEffect(() => {
+        let cancelled = false
+        withPending(() => service.getNotes())
+            .then((data) => { if (!cancelled) dispatch({ type: "load", notes: data }) })
+            .catch(() => { if (!cancelled) fail("Could not load the notes") })
+        return () => { cancelled = true }
+    }, [service, withPending, fail])
 
     const changeStorage = useCallback((type: StorageType) => {
         setStorageType(type)
-        noteService.current = new NoteService(createRepository(type))
-        load()
-    }, [load])
+        setService(new NoteService(createRepository(type)))
+    }, [])
 
     const bringToFront = useCallback((id: number) => {
         dispatch({ type: "bringToFront", id })
@@ -65,12 +71,12 @@ export function useNotes() {
     const updateNote = useCallback(async (id: number, changes: Partial<Note>, rollback?: Partial<Note>) => {
         patchNote(id, changes)
         try {
-            await withPending(() => noteService.current.updateNote(id, changes))
+            await withPending(() => service.updateNote(id, changes))
         } catch {
             if (rollback) patchNote(id, rollback)
             fail("Could not save the note")
         }
-    }, [patchNote, withPending, fail])
+    }, [patchNote, withPending, fail, service])
 
     // optimistic
     const createNote = useCallback(async (draft: Omit<Note, "id">): Promise<Note | null> => {
@@ -80,7 +86,7 @@ export function useNotes() {
         setAnnouncement("Note created")
 
         try {
-            const created = await withPending(() => noteService.current.createNote(draft))
+            const created = await withPending(() => service.createNote(draft))
             dispatch({ type: "reassignId", from: tempId, to: created.id })
             return created
         } catch {
@@ -88,7 +94,7 @@ export function useNotes() {
             fail("Could not create the note")
             return null
         }
-    }, [withPending, fail])
+    }, [withPending, fail, service])
 
     const removeNote = useCallback(async (id: number) => {
         const deleted = getNote(id)
@@ -98,16 +104,12 @@ export function useNotes() {
         setAnnouncement("Note deleted")
 
         try {
-            await withPending(() => noteService.current.deleteNote(id))
+            await withPending(() => service.deleteNote(id))
         } catch {
             dispatch({ type: "add", note: deleted })
             fail("Could not delete the note")
         }
-    }, [getNote, withPending, fail])
-
-    useEffect(() => {
-        load()
-    }, [load])
+    }, [getNote, withPending, fail, service])
 
     return {
         notes,
