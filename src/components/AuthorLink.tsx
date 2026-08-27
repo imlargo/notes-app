@@ -1,4 +1,6 @@
-export function AuthorLink() {
+import { memo } from "react"
+
+export const AuthorLink = memo(function AuthorLink() {
     return <a
         href="https://github.com/imlargo"
         target="_blank"
@@ -8,4 +10,4 @@ export function AuthorLink() {
         <span className="text-neutral-400">by</span>
         <span>imlargo.dev</span>
     </a>
-}
+})

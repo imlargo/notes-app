@@ -1,4 +1,4 @@
-import { forwardRef } from "react"
+import { forwardRef, memo } from "react"
 import { Plus } from "lucide-react"
 import { type NoteColor } from "../domain/note"
 import { ColorPicker } from "./ColorPicker"
@@ -10,7 +10,7 @@ interface ToolbarProps {
     onSelectColor: (color: NoteColor) => void
 }
 
-export const Toolbar = forwardRef<HTMLButtonElement, ToolbarProps>(({ onAddNote, color, colorLabel, onSelectColor }, ref) => {
+export const Toolbar = memo(forwardRef<HTMLButtonElement, ToolbarProps>(({ onAddNote, color, colorLabel, onSelectColor }, ref) => {
     return <div data-no-drag className="bg-neutral-800 flex items-center justify-center gap-x-4 px-2 py-2 rounded-full pointer-events-auto">
         <button
             ref={ref}
@@ -27,4 +27,4 @@ export const Toolbar = forwardRef<HTMLButtonElement, ToolbarProps>(({ onAddNote,
 
         <ColorPicker value={color} label={colorLabel} placement="top" onChange={onSelectColor} />
     </div>
-})
+}))

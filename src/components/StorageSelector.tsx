@@ -1,3 +1,4 @@
+import { memo } from "react"
 import type { StorageType } from "../services/create-repository"
 
 interface StorageSelectorProps {
@@ -5,7 +6,7 @@ interface StorageSelectorProps {
     onChange: (type: StorageType) => void
 }
 
-export function StorageSelector({ value, onChange }: StorageSelectorProps) {
+export const StorageSelector = memo(function StorageSelector({ value, onChange }: StorageSelectorProps) {
     return <select
         value={value}
         onChange={(e) => onChange(e.target.value as StorageType)}
@@ -15,4 +16,4 @@ export function StorageSelector({ value, onChange }: StorageSelectorProps) {
         <option value="memory">Memory (resets on reload)</option>
         <option value="local">Local storage (persists)</option>
     </select>
-}
+})
