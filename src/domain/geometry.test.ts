@@ -64,7 +64,7 @@ describe("clampSize", () => {
             .toEqual({ x: 900, y: 700, w: 100, h: 100 })
     })
 
-    it("keeps the minimum size even with no room left for it", () => {
+    it("keeps the minimum size even when there is no room for it", () => {
         expect(clampSize({ x: 990, y: 790, w: 200, h: 200 }, board)).toMatchObject({ w: MIN, h: MIN })
         expect(clampSize({ x: 4000, y: 4000, w: 200, h: 200 }, board)).toMatchObject({ w: MIN, h: MIN })
     })
@@ -90,14 +90,14 @@ describe("distanceTo", () => {
 describe("contains", () => {
     const trash = { x: 100, y: 100, w: 50, h: 50 }
 
-    it("takes the edges and nothing outside them", () => {
+    it("includes the edges and nothing outside them", () => {
         expect(contains(trash, { x: 100, y: 100 })).toBe(true)
         expect(contains(trash, { x: 150, y: 150 })).toBe(true)
         expect(contains(trash, { x: 99, y: 120 })).toBe(false)
         expect(contains(trash, { x: 120, y: 151 })).toBe(false)
     })
 
-    it("keeps nothing but its own corner when the rect has no area", () => {
+    it("includes only its own corner when the rect has no area", () => {
         // an unmounted trash zone measures 0x0, it must not swallow the drop
         const collapsed = { x: 0, y: 0, w: 0, h: 0 }
         expect(contains(collapsed, { x: 1, y: 0 })).toBe(false)

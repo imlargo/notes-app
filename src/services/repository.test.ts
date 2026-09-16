@@ -41,7 +41,7 @@ describe.each([
     })
     afterEach(() => { vi.useRealTimers() })
 
-    it("keeps what it created, in the order it was created", async () => {
+    it("lists the notes it created, in the order they were created", async () => {
         const before = (await settle(repo.list())).map(n => n.id)
         const a = await settle(repo.create(draft({ text: "a" })))
         const b = await settle(repo.create(draft({ text: "b" })))
@@ -103,7 +103,7 @@ describe.each([
         await expect(settle(repo.update(4242, { x: 1 }))).rejects.toThrow()
     })
 
-    it("removes a deleted note and takes a second delete as done", async () => {
+    it("removes the note, and deleting it again is not an error", async () => {
         const created = await settle(repo.create(draft()))
         await settle(repo.delete(created.id))
 
@@ -130,7 +130,7 @@ describe("LocalStorageRepository", () => {
 
     const repo = async () => new (await import("./local-note-repository")).LocalStorageRepository()
 
-    it("survives a reload, and does not reuse an id across one", async () => {
+    it("survives a reload, and does not reuse an id after one", async () => {
         const first = await settle((await repo()).create(draft({ text: "persisted" })))
         await expect(settle((await repo()).list())).resolves.toContainEqual(first)
 
@@ -139,7 +139,7 @@ describe("LocalStorageRepository", () => {
         expect(second.id).toBeGreaterThan(first.id)
     })
 
-    it("keeps clear of the ids of notes stored without a counter", async () => {
+    it("picks an id above the notes stored before the counter existed", async () => {
         // notes written before the id counter existed, the next id has to come from them
         localStorage.setItem("notes", JSON.stringify([note(4), note(11)]))
 

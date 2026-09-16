@@ -62,7 +62,7 @@ describe("reassignId", () => {
 describe("clamp", () => {
     const bounds = { w: 500, h: 400 }
 
-    it("brings a note that ended up outside back in", () => {
+    it("moves a note that fell outside back inside", () => {
         expect(notesReducer([note(1, { x: 900, y: 900 })], { type: "clamp", bounds })[0])
             .toMatchObject({ x: 400, y: 300 })
     })
@@ -86,7 +86,7 @@ describe("clamp", () => {
 })
 
 describe("bringToFront", () => {
-    it("moves the note to the end and carries it over untouched", () => {
+    it("moves the note to the end and keeps its identity", () => {
         const next = notesReducer(board, { type: "bringToFront", id: 1 })
 
         expect(next.map(n => n.id)).toEqual([2, 3, 1])
