@@ -71,6 +71,11 @@ describe("clamp", () => {
         expect(notesReducer(board, { type: "clamp", bounds: { w: 1000, h: 800 } })).toBe(board)
     })
 
+    it("shrinks a note that no longer fits", () => {
+        expect(notesReducer([note(1, { x: 300, w: 900, h: 200 })], { type: "clamp", bounds })[0])
+            .toMatchObject({ x: 0, w: 500, h: 200 })
+    })
+
     it("keeps the identity of the notes that did not move", () => {
         const mixed = [note(1), note(2, { x: 900 })]
         const next = notesReducer(mixed, { type: "clamp", bounds })
