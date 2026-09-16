@@ -62,6 +62,16 @@ export function clampSize(r: Rect, bounds: Size): Rect {
     }
 }
 
+export function bottomRight(r: Rect): Point {
+    return { x: r.x + r.w, y: r.y + r.h }
+}
+
+export function distanceTo(r: Rect, p: Point): number {
+    const dx = Math.max(r.x - p.x, 0, p.x - (r.x + r.w))
+    const dy = Math.max(r.y - p.y, 0, p.y - (r.y + r.h))
+    return Math.hypot(dx, dy)
+}
+
 export function contains(r: Rect, p: Point): boolean {
-    return p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h
+    return distanceTo(r, p) === 0
 }

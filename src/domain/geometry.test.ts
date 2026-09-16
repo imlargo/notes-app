@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
 import {
-    clampPoint, clampPosition, clampSize, contains, position, rectFromPoints,
+    clampPoint, clampPosition, clampSize, contains, distanceTo, position, rectFromPoints,
     resize, subtract, toRect, type Size,
 } from "./geometry"
 import { note } from "../test/factories"
@@ -72,6 +72,19 @@ describe("clampSize", () => {
 
 it("clampPoint keeps the drawn corner inside the board", () => {
     expect(clampPoint({ x: 1200, y: -30 }, board)).toEqual({ x: 1000, y: 0 })
+})
+
+describe("distanceTo", () => {
+    const trash = { x: 100, y: 100, w: 50, h: 50 }
+
+    it("measures from the nearest edge, not from the centre", () => {
+        expect(distanceTo(trash, { x: 130, y: 60 })).toBe(40)
+        expect(distanceTo(trash, { x: 190, y: 130 })).toBe(40)
+    })
+
+    it("measures the diagonal off a corner", () => {
+        expect(distanceTo(trash, { x: 70, y: 60 })).toBe(50)
+    })
 })
 
 describe("contains", () => {
