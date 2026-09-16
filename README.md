@@ -35,10 +35,13 @@ And the optional ones
 
 * Double click a note to edit its text
 * Notes come to front when you touch them
-* Notes are saved through an async repository, in-memory by default with a localStorage backend you can switch to from the top right corner
-* Colors, an explicit picker in the toolbar. With a note selected it recolors that one, otherwise it sets the colour the next one gets
+* Notes are saved through an async repository, in-memory by default with a localStorage backend you can switch to from the top right corner, and the board comes back on the backend you left it on
+* Colour, an explicit picker in the toolbar. With a note selected it recolours that one, otherwise it sets the colour the next one gets
 
 Everything also works from the keyboard. Tab moves between notes, arrows move the focused one, hold shift for a bigger step and alt to resize instead, enter edits, escape leaves the text or clears the selection, delete removes it. The colour picker is reachable by tabbing on to the toolbar, the selection survives leaving the note.
+
+Notes are clamped to the board, so shrinking the window brings them back inside instead of leaving
+them off screen.
 
 ## Layout
 
@@ -51,17 +54,11 @@ hooks/       useNotes (data and persistence), useBoardGestures (pointers),
 components/  Board and the pieces it composes
 ```
 
-Writes are optimistic everywhere: the screen updates first, the repository after, and a failure
-puts the previous value back and says why. Only the changed fields are sent, and the response is
-ignored on purpose so a slow write cannot overwrite something typed while it was in flight.
-
 The architecture and the reasoning behind it are in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## What I'd do next
 
 Tests that render the board. The pure layers and the repository contract are covered, but the gestures
 and the keyboard commands are not, and those are the features the brief is about.
-After that re-clamping on resize, notes come back inside the board the next time you move them but
-not when the window shrinks under them. And a failed write is announced but not retried, offering a
-retry on the toast would close that loop.
+A failed write is announced but not retried, offering a retry on the toast would close that loop.
 
