@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { Note } from "../domain/note";
 import { NoteService } from "../services/note";
-import { createRepository, type StorageType } from "../services/create-repository";
+import { createRepository, loadStorageType, saveStorageType, type StorageType } from "../services/create-repository";
 import { notesReducer } from "../state/notesReducer";
 
 const ERROR_TIMEOUT = 4000
@@ -15,12 +15,12 @@ export function useNotes() {
     const [error, setError] = useState<string | null>(null)
     const errorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
     const [pendingCount, setPendingCount] = useState(0)
-    const [storageType, setStorageType] = useState<StorageType>("memory")
+    const [storageType, setStorageType] = useState(loadStorageType)
 
     // negative so it doesnt collide with the repo
     const lastTempId = useRef(0)
 
-    const [service, setService] = useState(() => new NoteService(createRepository("memory")))
+    const [service, setService] = useState(() => new NoteService(createRepository(storageType)))
 
     const getNote = useCallback((id: number) => notesRef.current.find((n) => n.id === id), [])
 
@@ -51,6 +51,7 @@ export function useNotes() {
     }, [service, withPending, fail])
 
     const changeStorage = useCallback((type: StorageType) => {
+        saveStorageType(type)
         setStorageType(type)
         setService(new NoteService(createRepository(type)))
     }, [])
