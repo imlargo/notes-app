@@ -2,7 +2,6 @@ import { useCallback, useRef, useState, type PointerEvent } from "react";
 import type { Note } from "../domain/note";
 import { clampPoint, clampPosition, clampSize, contains, position, rectFromPoints, resize, subtract, toRect, type Point, type Rect, type Size } from "../domain/geometry";
 
-// this is a ref ref and updates on every pointermove
 type Gesture =
     | { kind: "create", origin: Point }
     | { kind: "move", id: number, grab: Point, start: Rect }
@@ -17,12 +16,11 @@ function resizedTo(g: Extract<Gesture, { kind: "resize" }>, point: Point, bounds
 }
 
 const MIN_DRAWN_SIZE = 8
-const DRAG_THRESHOLD = 4 // how far the pointer has to travel before a press counts as a drag
+const DRAG_THRESHOLD = 4 // how far a press has to travel before it counts as a drag
 
 interface BoardGesturesOptions {
     boardSize: () => Size
     getNote: (id: number) => Note | undefined
-    // every frame and local
     preview: (id: number, changes: Partial<Note>) => void
     commit: (id: number, changes: Partial<Note>, rollback: Partial<Note>) => void
     onCreate: (rect: Rect) => void
@@ -62,7 +60,6 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
     const onPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement
 
-        // anything interactive keeps its own behaviour instead of starting a drag
         if (target.closest("textarea, button, a, select, [data-no-drag]")) return
 
         const r = e.currentTarget.getBoundingClientRect();
@@ -114,6 +111,9 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
     const onPointerUp = useCallback((e: PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
         if (!g) return
+
+        if (pendingCapture.current) return endGesture()
+
         const point = toLocal(e)
 
         if (g.kind === "create") {

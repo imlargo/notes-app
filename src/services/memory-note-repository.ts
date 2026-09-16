@@ -3,8 +3,8 @@ import { sleep } from "../lib/sleep";
 import type { NoteRepository } from "./repository";
 
 let _mockNotes: Note[] = [
-    { id: 1, text: "Note 1", x: 10, y: 10, w: 150, h: 125 , color: randomColor()},
-    { id: 2, text: "Note 2", x: 50, y: 10, w: 150, h: 125 , color: randomColor()},
+    { id: 1, text: "Note 1", x: 10, y: 10, w: 150, h: 125, color: randomColor() },
+    { id: 2, text: "Note 2", x: 50, y: 10, w: 150, h: 125, color: randomColor() },
     { id: 3, text: "Note 3", x: 300, y: 10, w: 150, h: 125, color: randomColor() }
 ]
 
@@ -22,6 +22,7 @@ export class MockNoteRepository implements NoteRepository {
     async create(note: Partial<Note>) {
         const newNote = {
             ...note,
+            color: note.color ?? randomColor(),
             id: _nextId++,
         } as Note
 
@@ -36,7 +37,7 @@ export class MockNoteRepository implements NoteRepository {
         _mockNotes = _mockNotes.filter((note) => note.id !== noteId)
     }
 
-    async update(noteId: number, data: Partial<Note> ) {
+    async update(noteId: number, data: Partial<Note>) {
         await sleep(500);
 
         const index = _mockNotes.findIndex((note) => note.id === noteId)
@@ -45,6 +46,7 @@ export class MockNoteRepository implements NoteRepository {
         const updated = {
             ..._mockNotes[index],
             ...data,
+            id: noteId,
         }
         _mockNotes[index] = updated
         return updated

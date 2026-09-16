@@ -2,7 +2,6 @@ import { randomColor, type Note } from "../domain/note";
 import { sleep } from "../lib/sleep";
 import type { NoteRepository } from "./repository";
 
-// sleep just to fake network latency like the other repo
 const STORAGE_KEY = "notes"
 const NEXT_ID_KEY = "notes:next-id"
 
@@ -40,9 +39,9 @@ export class LocalStorageRepository implements NoteRepository {
         const notes = loadNotes();
 
         const newNote = {
+            ...note,
+            color: note.color ?? randomColor(),
             id: generateNewID(notes),
-            ...note, 
-            color: note.color ?? randomColor()
         } as Note
 
         notes.push(newNote)
@@ -68,6 +67,7 @@ export class LocalStorageRepository implements NoteRepository {
         const updated = {
             ...notes[index],
             ...data,
+            id: noteId,
         }
         notes[index] = updated
         saveNotes(notes)

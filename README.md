@@ -9,6 +9,12 @@ npm install
 npm run dev
 ```
 
+Run the tests
+
+```bash
+npm test
+```
+
 Build and preview the production bundle
 
 ```bash
@@ -53,7 +59,8 @@ The architecture and the reasoning behind it are in [ARCHITECTURE.md](./ARCHITEC
 
 ## What I'd do next
 
-Tests first, domain/, the reducer and the gesture maths are pure and were written with that in mind.
+Tests that render the board. The pure layers and the repository contract are covered, but the gestures
+and the keyboard commands are not, and those are the features the brief is about.
 After that re-clamping on resize, notes come back inside the board the next time you move them but
 not when the window shrinks under them. And a failed write is announced but not retried, offering a
 retry on the toast would close that loop.
