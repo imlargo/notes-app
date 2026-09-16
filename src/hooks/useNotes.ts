@@ -20,10 +20,8 @@ export function useNotes() {
     // negative so it doesnt collide with the repo
     const lastTempId = useRef(0)
 
-    // the service is state, so picking a backend is just swapping it and the load effect follows
     const [service, setService] = useState(() => new NoteService(createRepository("memory")))
 
-    // ref keeps re-renders stable
     const getNote = useCallback((id: number) => notesRef.current.find((n) => n.id === id), [])
 
     const fail = useCallback((message: string) => {
@@ -43,8 +41,7 @@ export function useNotes() {
         }
     }, [])
 
-    // loads on mount and again on every backend change. the cleanup drops a list() still in flight
-    // from the previous one, so its answer cannot land after the new backend has already loaded
+    // cancel drops a list() from the old backend, it must not land after the new one
     useEffect(() => {
         let cancelled = false
         withPending(() => service.getNotes())
@@ -62,12 +59,10 @@ export function useNotes() {
         dispatch({ type: "bringToFront", id })
     }, [])
 
-    // local only
     const patchNote = useCallback((id: number, changes: Partial<Note>) => {
         dispatch({ type: "patch", id, changes })
     }, [])
 
-    // only patch changed fields
     const updateNote = useCallback(async (id: number, changes: Partial<Note>, rollback?: Partial<Note>) => {
         patchNote(id, changes)
 
@@ -81,7 +76,6 @@ export function useNotes() {
         }
     }, [patchNote, withPending, fail, service])
 
-    // optimistic
     const createNote = useCallback(async (draft: Omit<Note, "id">): Promise<Note | null> => {
         const tempId = --lastTempId.current
 
