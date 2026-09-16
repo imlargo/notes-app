@@ -39,7 +39,7 @@ export function ColorPicker({ value, label, placement = "bottom", onChange }: Co
         </button>
 
         {open && (
-            <fieldset className={`absolute left-0 z-10 flex gap-2 rounded-full bg-neutral-800 p-2 ${placement === "top" ? "bottom-full mb-2" : "top-full mt-2"}`}>
+            <fieldset className={`absolute left-1/2 -translate-x-1/2 z-10 flex gap-1.5 sm:gap-2 rounded-full bg-neutral-800 p-2 ${placement === "top" ? "bottom-full mb-2" : "top-full mt-2"}`}>
                 <legend className="sr-only">{label}</legend>
 
                 {NOTE_COLORS.map((color) => (
