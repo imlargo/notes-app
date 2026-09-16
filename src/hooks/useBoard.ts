@@ -15,7 +15,7 @@ export function useBoard() {
 
     const { boardRef, boardSize, size } = useBoardBounds()
 
-    useEffect(() => { clampNotes(size) }, [size, notes.length, clampNotes])
+    useEffect(() => { clampNotes(size) }, [size, notes, clampNotes])
 
     const [editingId, setEditingId] = useState<number | null>(null)
     const [activeNoteId, setActiveNoteId] = useState<number | null>(null)
