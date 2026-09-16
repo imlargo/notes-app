@@ -15,8 +15,6 @@ export function useBoard() {
 
     const { boardRef, boardSize, size } = useBoardBounds()
 
-    useEffect(() => { clampNotes(size) }, [size, notes, clampNotes])
-
     const [editingId, setEditingId] = useState<number | null>(null)
     const [activeNoteId, setActiveNoteId] = useState<number | null>(null)
     const [pendingFocusId, setPendingFocusId] = useState<number | null>(null)
@@ -94,6 +92,9 @@ export function useBoard() {
         onDelete: deleteNote,
         onSelect: selectNote,
     })
+
+    // a gesture already clamps whatever it touches
+    useEffect(() => { if (!drag) clampNotes(size) }, [size, notes, drag, clampNotes])
 
     const activeNote = activeNoteId !== null ? notes.find((n) => n.id === activeNoteId) : undefined
 
