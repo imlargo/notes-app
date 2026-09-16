@@ -45,6 +45,7 @@ export function useNotes() {
     // cancel drops a list() from the old backend, it must not land after the new one
     useEffect(() => {
         let cancelled = false
+        // oxlint-disable-next-line react/set-state-in-effect
         withPending(() => service.getNotes())
             .then((data) => { if (!cancelled) dispatch({ type: "load", notes: data }) })
             .catch(() => { if (!cancelled) fail("Could not load the notes") })
