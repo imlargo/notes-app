@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, type PointerEvent } from "react";
 import type { Note } from "../domain/note";
-import { clampPoint, clampPosition, clampSize, contains, position, rectFromPoints, resize, subtract, toRect, type Point, type Rect, type Size } from "../domain/geometry";
+import { bottomRight, clampPoint, clampPosition, clampSize, contains, distanceTo, position, rectFromPoints, resize, subtract, toRect, type Point, type Rect, type Size } from "../domain/geometry";
 
 type Gesture =
     | { kind: "create", origin: Point }
@@ -17,6 +17,11 @@ function resizedTo(g: Extract<Gesture, { kind: "resize" }>, point: Point, bounds
 
 const MIN_DRAWN_SIZE = 8
 const DRAG_THRESHOLD = 4 // how far a press has to travel before it counts as a drag
+const TRASH_SLACK = 32 // the zone reaches past the icon, so the corner of the board lands inside it
+const TRASH_REACH = 120 // how close the note gets before the zone starts pulling it in
+
+// the note is clamped inside the board,    so what reaches the trash is its corner, never the pointer
+type Drag = { id: number, pull: number, pivot: Point }
 
 interface BoardGesturesOptions {
     boardSize: () => Size
@@ -30,7 +35,7 @@ interface BoardGesturesOptions {
 
 export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate, onDelete, onSelect }: BoardGesturesOptions) {
     const [draft, setDraft] = useState<Rect | null>(null)
-    const [overTrash, setOverTrash] = useState(false)
+    const [drag, setDrag] = useState<Drag | null>(null)
 
     const trashRef = useRef<HTMLDivElement>(null)
     const boardOrigin = useRef<Point>({ x: 0, y: 0 })
@@ -40,13 +45,13 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
     const toLocal = useCallback((e: PointerEvent): Point =>
         subtract({ x: e.clientX, y: e.clientY }, boardOrigin.current), [])
 
-    const trashRect = useCallback((): Rect | null => {
+    const trashZone = useCallback((): Rect | null => {
         const trash = trashRef.current?.getBoundingClientRect()
         if (!trash) return null
         return {
-            ...subtract({ x: trash.left, y: trash.top }, boardOrigin.current),
-            w: trash.width,
-            h: trash.height
+            ...subtract({ x: trash.left - TRASH_SLACK, y: trash.top - TRASH_SLACK }, boardOrigin.current),
+            w: trash.width + 2 * TRASH_SLACK,
+            h: trash.height + 2 * TRASH_SLACK,
         }
     }, [])
 
@@ -54,7 +59,7 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
         gesture.current = null
         pendingCapture.current = null
         setDraft(null)
-        setOverTrash(false)
+        setDrag(null)
     }, [])
 
     const onPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
@@ -100,13 +105,19 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
         if (g.kind === "create") {
             setDraft(rectFromPoints(g.origin, clampPoint(point, bounds)))
         } else if (g.kind === "move") {
-            preview(g.id, position(movedTo(g, point, bounds)))
-            const trash = trashRect()
-            setOverTrash(trash !== null && contains(trash, point))
+            const moved = movedTo(g, point, bounds)
+            preview(g.id, position(moved))
+
+            const zone = trashZone()
+            setDrag({
+                id: g.id,
+                pull: zone ? Math.max(0, 1 - distanceTo(zone, bottomRight(moved)) / TRASH_REACH) : 0,
+                pivot: subtract(point, position(moved)), // where the cursor is inside the note
+            })
         } else if (g.kind === "resize") {
             preview(g.id, resizedTo(g, point, bounds))
         }
-    }, [preview, boardSize, toLocal, trashRect])
+    }, [preview, boardSize, toLocal, trashZone])
 
     const onPointerUp = useCallback((e: PointerEvent<HTMLDivElement>) => {
         const g = gesture.current
@@ -120,12 +131,13 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
             const rect = rectFromPoints(g.origin, clampPoint(point, boardSize()))
             if (rect.w > MIN_DRAWN_SIZE && rect.h > MIN_DRAWN_SIZE) onCreate(rect)
         } else if (g.kind === "move") {
-            const trash = trashRect();
-            if (trash && contains(trash, point)) {
+            const moved = movedTo(g, point, boardSize())
+            const zone = trashZone()
+
+            if (zone && contains(zone, bottomRight(moved))) {
                 onDelete(g.id)
-            } else {
-                const moved = position(movedTo(g, point, boardSize()))
-                if (moved.x !== g.start.x || moved.y !== g.start.y) commit(g.id, moved, g.start)
+            } else if (moved.x !== g.start.x || moved.y !== g.start.y) {
+                commit(g.id, position(moved), g.start)
             }
         } else {
             const resized = resizedTo(g, point, boardSize())
@@ -133,7 +145,7 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
         }
 
         endGesture()
-    }, [onCreate, onDelete, commit, boardSize, toLocal, trashRect, endGesture])
+    }, [onCreate, onDelete, commit, boardSize, toLocal, trashZone, endGesture])
 
     const cancelGesture = useCallback(() => {
         const g = gesture.current
@@ -145,9 +157,7 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
     return {
         trashRef,
         draft,
-        overTrash,
-        // reading the ref directly is fine, preview already rerenders on every move
-        draggingId: gesture.current?.kind === "move" ? gesture.current.id : null,
+        drag,
         onPointerDown,
         onPointerMove,
         onPointerUp,

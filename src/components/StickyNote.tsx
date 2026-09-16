@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, type CSSProperties, type KeyboardEvent } from "react";
+import type { Point } from "../domain/geometry";
 import { COLOR_CLASSES, type Note } from "../domain/note"
 import { GripHorizontal } from "lucide-react";
 import { BOARD_INSTRUCTIONS_ID } from "./ScreenReaderStatus";
@@ -7,7 +8,8 @@ interface StickyNoteProps {
     note: Note
     className?: string;
 
-    fading?: boolean;
+    // set while this note is on its way to the trash
+    discard?: { pull: number, pivot: Point };
     editing?: boolean;
     active?: boolean;
     onChange?: (id: number, changes: Partial<Note>) => void
@@ -22,8 +24,9 @@ interface StickyNoteProps {
 
 const STEP = 8
 const STEP_LARGE = 32
+const DISCARD_SIZE = 120 // what a note shrinks to on the trash, so a big one shrinks far more
 
-export const StickyNote = memo(({ note, className, fading, editing, active, onChange, onStopEditing, onMove, onResize, onDelete, onStartEditing, onActivate, onDeactivate }: StickyNoteProps) => {
+export const StickyNote = memo(({ note, className, discard, editing, active, onChange, onStopEditing, onMove, onResize, onDelete, onStartEditing, onActivate, onDeactivate }: StickyNoteProps) => {
     const noteRef = useRef<HTMLDivElement>(null)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -31,13 +34,18 @@ export const StickyNote = memo(({ note, className, fading, editing, active, onCh
         if (editing) textareaRef.current?.focus()
     }, [editing])
 
+    const scale = discard ? 1 - discard.pull * (1 - Math.min(0.8, DISCARD_SIZE / Math.max(note.w, note.h))) : 1
+
+    // separate properties so the scale can ease while the position tracks the pointer frame by frame
     const style: CSSProperties = {
-        transform: `translate(${note.x}px, ${note.y}px)`,
+        translate: `${note.x}px ${note.y}px`,
+        scale: String(scale),
+        transformOrigin: discard && `${discard.pivot.x}px ${discard.pivot.y}px`,
         width: note.w,
         height: note.h,
     }
 
-    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border min-w-12 min-h-24 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-indigo-600 ${active ? "ring-2 ring-neutral-800" : ""} ${className} ${fading && "opacity-50"} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
+    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border min-w-12 min-h-24 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-indigo-600 ${active ? "ring-2 ring-neutral-800" : ""} ${discard?.pull ? "transition-[scale] duration-200 ease-in-out" : ""} ${className} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
 
     const onTextChange = (text: string) => {
         // asks for the height the text needs
