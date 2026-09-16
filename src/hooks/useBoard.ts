@@ -107,7 +107,6 @@ export function useBoard() {
     useEffect(() => {
         if (pendingFocusId === null) return
         document.querySelector<HTMLElement>(`[data-note-id="${pendingFocusId}"]`)?.focus()
-        setPendingFocusId(null)
     }, [pendingFocusId])
 
     return {
