@@ -6,7 +6,6 @@ import { BOARD_INSTRUCTIONS_ID } from "./ScreenReaderStatus";
 
 interface StickyNoteProps {
     note: Note
-    className?: string;
 
     // set while this note is on its way to the trash
     discard?: { pull: number, pivot: Point };
@@ -26,7 +25,7 @@ const STEP = 8
 const STEP_LARGE = 32
 const DISCARD_SIZE = 120 // what a note shrinks to on the trash, so a big one shrinks far more
 
-export const StickyNote = memo(({ note, className, discard, editing, active, onChange, onStopEditing, onMove, onResize, onDelete, onStartEditing, onActivate, onDeactivate }: StickyNoteProps) => {
+export const StickyNote = memo(({ note, discard, editing, active, onChange, onStopEditing, onMove, onResize, onDelete, onStartEditing, onActivate, onDeactivate }: StickyNoteProps) => {
     const noteRef = useRef<HTMLDivElement>(null)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -45,7 +44,7 @@ export const StickyNote = memo(({ note, className, discard, editing, active, onC
         height: note.h,
     }
 
-    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-indigo-600 ${active ? "ring-2 ring-neutral-800" : ""} ${discard?.pull ? "transition-[scale] duration-200 ease-in-out" : ""} ${className} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
+    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-indigo-600 ${active ? "ring-2 ring-neutral-800" : ""} ${discard?.pull ? "transition-[scale] duration-200 ease-in-out" : ""} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
 
     const onTextChange = (text: string) => {
         // asks for the height the text needs
