@@ -1,4 +1,4 @@
-import { clampPosition, position, type Size } from "../domain/geometry";
+import { clampPosition, clampSize, toRect, type Size } from "../domain/geometry";
 import type { Note } from "../domain/note";
 
 export type Action =
@@ -32,14 +32,14 @@ export function notesReducer(state: Note[], action: Action): Note[] {
             return state.map((n) => n.id === action.from ? { ...n, id: action.to } : n)
 
         case "clamp": {
-            let moved = false
+            let changed = false
             const next = state.map((n) => {
-                const inside = clampPosition(n, action.bounds)
-                if (inside.x === n.x && inside.y === n.y) return n
-                moved = true
-                return { ...n, ...position(inside) }
+                const inside = clampSize(clampPosition(n, action.bounds), action.bounds)
+                if (inside.x === n.x && inside.y === n.y && inside.w === n.w && inside.h === n.h) return n
+                changed = true
+                return { ...n, ...toRect(inside) }
             })
-            return moved ? next : state
+            return changed ? next : state
         }
 
         case "bringToFront": {
