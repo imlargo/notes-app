@@ -51,7 +51,7 @@ export function Board() {
     }, [deleteNote])
 
     return (
-        <div className="board canvas-grid w-full h-full relative select-none"
+        <div className="board canvas-grid w-full h-full relative select-none overflow-hidden"
             ref={boardRef}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
