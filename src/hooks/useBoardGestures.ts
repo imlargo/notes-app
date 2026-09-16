@@ -128,8 +128,9 @@ export function useBoardGestures({ boardSize, getNote, preview, commit, onCreate
         const point = toLocal(e)
 
         if (g.kind === "create") {
-            const rect = rectFromPoints(g.origin, clampPoint(point, boardSize()))
-            if (rect.w > MIN_DRAWN_SIZE && rect.h > MIN_DRAWN_SIZE) onCreate(rect)
+            const bounds = boardSize()
+            const rect = rectFromPoints(g.origin, clampPoint(point, bounds))
+            if (rect.w > MIN_DRAWN_SIZE && rect.h > MIN_DRAWN_SIZE) onCreate(clampSize(rect, bounds))
         } else if (g.kind === "move") {
             const moved = movedTo(g, point, boardSize())
             const zone = trashZone()

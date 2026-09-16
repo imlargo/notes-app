@@ -59,6 +59,27 @@ describe("reassignId", () => {
     })
 })
 
+describe("clamp", () => {
+    const bounds = { w: 500, h: 400 }
+
+    it("brings a note that ended up outside back in", () => {
+        expect(notesReducer([note(1, { x: 900, y: 900 })], { type: "clamp", bounds })[0])
+            .toMatchObject({ x: 400, y: 300 })
+    })
+
+    it("returns the same array when every note already fits", () => {
+        expect(notesReducer(board, { type: "clamp", bounds: { w: 1000, h: 800 } })).toBe(board)
+    })
+
+    it("keeps the identity of the notes that did not move", () => {
+        const mixed = [note(1), note(2, { x: 900 })]
+        const next = notesReducer(mixed, { type: "clamp", bounds })
+
+        expect(next[0]).toBe(mixed[0])
+        expect(next[1]).toMatchObject({ x: 400 })
+    })
+})
+
 describe("bringToFront", () => {
     it("moves the note to the end and carries it over untouched", () => {
         const next = notesReducer(board, { type: "bringToFront", id: 1 })

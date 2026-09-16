@@ -45,7 +45,7 @@ export const StickyNote = memo(({ note, className, discard, editing, active, onC
         height: note.h,
     }
 
-    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border min-w-12 min-h-24 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-indigo-600 ${active ? "ring-2 ring-neutral-800" : ""} ${discard?.pull ? "transition-[scale] duration-200 ease-in-out" : ""} ${className} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
+    const cls = `cursor-grab flex flex-col absolute top-0 left-0 border outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-indigo-600 ${active ? "ring-2 ring-neutral-800" : ""} ${discard?.pull ? "transition-[scale] duration-200 ease-in-out" : ""} ${className} ${note.color ? COLOR_CLASSES[note.color] : "bg-neutral-50 opacity-80"} `
 
     const onTextChange = (text: string) => {
         // asks for the height the text needs
@@ -89,14 +89,14 @@ export const StickyNote = memo(({ note, className, discard, editing, active, onC
         onKeyDown={onKeyDown}
         onFocus={() => onActivate?.(note.id)}
     >
-        <div className="flex items-center justify-center border-b px-3 py-2 shrink-0">
+        <div className="flex items-center justify-center border-b px-3 py-1.5 shrink-0">
             <GripHorizontal className="size-4 text-neutral-400" aria-hidden="true" />
         </div>
 
-        <div className="flex-1 min-h-0 w-full  p-4">
+        <div className="flex-1 min-h-0 w-full p-3">
             <textarea
                 ref={textareaRef}
-                className={`text-neutral-600 w-full h-full resize-none outline-none bg-none ${editing ? "cursor-text select-text" : "pointer-events-none"}`}
+                className={`text-neutral-600 w-full h-full resize-none outline-none bg-none ${editing ? "cursor-text select-text" : "pointer-events-none overflow-hidden"}`}
                 aria-label="Note text"
 
                 value={note.text}

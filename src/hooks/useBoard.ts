@@ -9,11 +9,13 @@ const NEW_NOTE = { w: 160, h: 130 }
 
 export function useBoard() {
     const {
-        notes, getNote, bringToFront, patchNote, updateNote, createNote, removeNote,
+        notes, getNote, bringToFront, clampNotes, patchNote, updateNote, createNote, removeNote,
         announcement, error, isLoading, storageType, changeStorage,
     } = useNotes()
 
-    const { boardRef, boardSize } = useBoardBounds()
+    const { boardRef, boardSize, size } = useBoardBounds()
+
+    useEffect(() => { clampNotes(size) }, [size, notes.length, clampNotes])
 
     const [editingId, setEditingId] = useState<number | null>(null)
     const [activeNoteId, setActiveNoteId] = useState<number | null>(null)

@@ -1,4 +1,4 @@
-const MIN_NOTE_SIZE = 80
+const MIN_NOTE_SIZE = 96
 
 export type Point = { x: number, y: number }
 export type Rect = { x: number, y: number, w: number, h: number }

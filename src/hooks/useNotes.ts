@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import type { Size } from "../domain/geometry";
 import type { Note } from "../domain/note";
 import { NoteService } from "../services/note";
 import { createRepository, loadStorageType, saveStorageType, type StorageType } from "../services/create-repository";
@@ -54,6 +55,10 @@ export function useNotes() {
         saveStorageType(type)
         setStorageType(type)
         setService(new NoteService(createRepository(type)))
+    }, [])
+
+    const clampNotes = useCallback((bounds: Size) => {
+        dispatch({ type: "clamp", bounds })
     }, [])
 
     const bringToFront = useCallback((id: number) => {
@@ -113,6 +118,7 @@ export function useNotes() {
         notes,
         getNote,
         bringToFront,
+        clampNotes,
         patchNote,
         updateNote,
         createNote,

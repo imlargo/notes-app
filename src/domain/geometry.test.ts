@@ -6,7 +6,7 @@ import {
 import { note } from "../test/factories"
 
 const board: Size = { w: 1000, h: 800 }
-const MIN = 80
+const MIN = 96
 
 it("subtract gives the delta between two points", () => {
     expect(subtract({ x: 30, y: 10 }, { x: 100, y: 4 })).toEqual({ x: -70, y: 6 })

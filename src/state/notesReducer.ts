@@ -1,3 +1,4 @@
+import { clampPosition, position, type Size } from "../domain/geometry";
 import type { Note } from "../domain/note";
 
 export type Action =
@@ -7,8 +8,7 @@ export type Action =
     | { type: "remove", id: number }
     | { type: "reassignId", from: number, to: number }
     | { type: "bringToFront", id: number }
-
-
+    | { type: "clamp", bounds: Size }
 
 
 export function notesReducer(state: Note[], action: Action): Note[] {
@@ -30,6 +30,17 @@ export function notesReducer(state: Note[], action: Action): Note[] {
 
         case "reassignId":
             return state.map((n) => n.id === action.from ? { ...n, id: action.to } : n)
+
+        case "clamp": {
+            let moved = false
+            const next = state.map((n) => {
+                const inside = clampPosition(n, action.bounds)
+                if (inside.x === n.x && inside.y === n.y) return n
+                moved = true
+                return { ...n, ...position(inside) }
+            })
+            return moved ? next : state
+        }
 
         case "bringToFront": {
             // z order is just array order, moving to front = moving to the end

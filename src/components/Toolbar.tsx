@@ -16,7 +16,7 @@ export const Toolbar = memo(forwardRef<HTMLButtonElement, ToolbarProps>(({ onAdd
             ref={ref}
             type="button"
             onClick={onAddNote}
-            className="py-2 px-4 bg-white flex items-center justify-center gap-x-1 rounded-full focus-visible:ring-2 focus-visible:ring-indigo-600"
+            className="py-2 px-4 bg-white flex items-center justify-center gap-x-1 rounded-full whitespace-nowrap focus-visible:ring-2 focus-visible:ring-indigo-600"
         >
             <Plus className="size-4" aria-hidden="true"></Plus>
             <span>New note</span>
