@@ -12,9 +12,17 @@ export function createRepository(type: StorageType): NoteRepository {
 
 // the choice outlives the tab, coming back to an empty board would read as lost notes
 export function loadStorageType(): StorageType {
-    return localStorage.getItem(STORAGE_TYPE_KEY) === "local" ? "local" : "memory"
+    try {
+        return localStorage.getItem(STORAGE_TYPE_KEY) === "local" ? "local" : "memory"
+    } catch {
+        return "memory" // fallback
+    }
 }
 
 export function saveStorageType(type: StorageType): void {
-    localStorage.setItem(STORAGE_TYPE_KEY, type)
+    try {
+        localStorage.setItem(STORAGE_TYPE_KEY, type)
+    } catch {
+        // ignore
+    }
 }
