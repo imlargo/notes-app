@@ -81,7 +81,7 @@ export function useBoard() {
     }, [bringToFront])
 
     const {
-        trashRef, draft, overTrash, draggingId,
+        trashRef, draft, drag,
         onPointerDown, onPointerMove, onPointerUp, cancelGesture,
     } = useBoardGestures({
         boardSize,
@@ -116,11 +116,10 @@ export function useBoard() {
         cancelGesture,
         onDoubleClick,
         editingId,
-        overTrash,
+        drag,
         editNote,
         stopEditing,
         draft,
-        draggingId,
         boardRef,
         trashRef,
         addNote,

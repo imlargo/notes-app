@@ -19,13 +19,12 @@ export function Board() {
         cancelGesture,
         onDoubleClick,
         editingId,
-        overTrash,
+        drag,
         editNote,
         stopEditing,
         draft,
         boardRef,
         trashRef,
-        draggingId,
         addNote,
         moveNoteBy,
         resizeNoteBy,
@@ -67,7 +66,7 @@ export function Board() {
 
             {notes.map((note) => (
                 <StickyNote
-                    fading={overTrash && draggingId === note.id}
+                    discard={drag?.id === note.id ? drag : undefined}
                     editing={editingId === note.id}
                     onChange={editNote}
                     onStopEditing={stopEditing}
@@ -96,7 +95,7 @@ export function Board() {
                     onSelectColor={selectColor}
                 />
 
-                <TrashZone ref={trashRef} />
+                <TrashZone ref={trashRef} armed={drag !== null} pull={drag?.pull} />
             </div>
         </div>
     )
